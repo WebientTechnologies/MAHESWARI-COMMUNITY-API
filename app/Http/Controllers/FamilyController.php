@@ -15,11 +15,14 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Mail\VerifyEmail;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\ServiceAccount;
+
 class FamilyController extends Controller
 {
-    public function __construct() {
-        $this->middleware('auth:family_head', ['except' => ['login', 'register', 'verifyEmail']]);
-    }
+    // public function __construct() {
+    //     $this->middleware('auth:family_head', ['except' => ['login', 'register', 'verifyEmail']]);
+    // }
 
     public function register(Request $request){
         $validator = Validator::make($request->all(), [
@@ -65,6 +68,51 @@ class FamilyController extends Controller
             'expires_in' => auth()->factory()->getTTL() * 10080,
             'family_head' => auth('family_head')->user()
         ]);
+    }
+
+    function sendOtp(Request $request)
+    {
+        $phoneNumber = $request->input('phone_number');
+        $verificationCode = '123456'; // The verification code sent to the user
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='AIzaSyBC92PdmZt6iytdT5-dRIEsNJ6x5j-kO1I'",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode(array(
+                "phoneNumber" => $phoneNumber,
+                "recaptchaToken" => "",
+                "iosReceipt" => "",
+                "androidReceipt" => "",
+                "requestType" => "phoneVerification",
+                "code" => $verificationCode
+            )),
+            CURLOPT_HTTPHEADER => array(
+                "Content-Type: application/json"
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        print_r($response);exit;
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            return response()->json([
+                'message' => 'Failed to send OTP'
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'OTP sent successfully'
+            ]);
+        }
     }
 
     public function login(Request $request){
