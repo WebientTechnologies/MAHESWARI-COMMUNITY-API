@@ -43,7 +43,7 @@ Route::group([
 
     //Family Head//
     Route::post('/register-family-head', [FamilyController::class, 'register']);
-    Route::post('/family-head-login', [FamilyController::class, 'login']);
+    Route::post('/login', [FamilyController::class, 'login']);
     Route::post('/send-otp', [FamilyController::class, 'sendOtp']);
 
     //Family Member Route//

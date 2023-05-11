@@ -106,22 +106,40 @@ class FamilyController extends Controller
 
     }
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $data = [];
-    	$validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
+
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|numeric|min:6',
         ]);
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-        if (! $token = auth('family_head')->attempt($validator->validated())) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+
+        $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
+
+        if (!$familyMember) {
+            $head = Family::where('head_mobile_number', $request->monile)->first();
+
+            if (!$head) {
+                $data['status'] = "Error";
+                $data['message'] = 'Please Enter Valid Mobile Number';
+                $status = 400;
+                return response()->json($data, $status);
+            } else {
+                $data['status'] = "Success";
+                $data['role'] = "Family Head";
+                $data['data'] = $head;
+            }
+        } else {
+            $data['status'] = "Success";
+            $data['role'] = "Family Member";
+            $data['data'] = $familyMember;
         }
-        
-        $a_token = $this->createNewToken($token);
-        $data['status'] = "Success";
-        $data['token'] = $a_token;
+
         return response()->json($data, 200);
     }
+
 }
