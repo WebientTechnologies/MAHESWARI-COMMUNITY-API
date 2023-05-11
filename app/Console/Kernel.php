@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         // ...
         \App\Console\Commands\UpdateOrderLock::class,
+        \App\Console\Commands\SendBirthdayWishes::class,
     ];
 
     
@@ -23,6 +24,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('orders:update-order-lock')
              ->everyMinute();
+        $schedule->command('send:birthday-wishes')->daily();
 
     }
 
