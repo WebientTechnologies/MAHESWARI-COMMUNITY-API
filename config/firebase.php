@@ -3,6 +3,16 @@
 declare(strict_types=1);
 
 return [
+
+    'firebase' => [
+        'apiKey' => 'AIzaSyBC92PdmZt6iytdT5-dRIEsNJ6x5j-kO1I',
+        'authDomain' => 'community-ae306.firebaseapp.com',
+        'projectId' => 'community-ae306',
+        'storageBucket' => 'community-ae306.appspot.com',
+        'messagingSenderId' => '799061137300',
+        'appId' => '1:799061137300:web:0db6e4cb9011c1f4d92181',
+        'measurementId' => 'G-0R389ML4QG',
+    ],
     /*
      * ------------------------------------------------------------------------
      * Default Firebase project

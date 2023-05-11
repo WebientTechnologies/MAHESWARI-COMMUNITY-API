@@ -11,6 +11,7 @@ use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\BirthdayWishController;
 
 
 
@@ -42,7 +43,7 @@ Route::group([
 
     //Family Head//
     Route::post('/register-family-head', [FamilyController::class, 'register']);
-    Route::post('/family-head-login', [FamilyController::class, 'login']);
+    Route::post('/login', [FamilyController::class, 'login']);
     Route::post('/send-otp', [FamilyController::class, 'sendOtp']);
 
     //Family Member Route//
@@ -75,6 +76,8 @@ Route::group([
     
     //Quiz Route//
     Route::get('/quiz-details', [QuizController::class, 'getQuizDetails']);
+
+    Route::post('/send-birthday-wish', [BirthdayWishController::class, 'send']);
 
 });
 

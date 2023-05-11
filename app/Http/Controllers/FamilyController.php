@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\Family;
+use App\Models\FamilyMember;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -72,65 +73,73 @@ class FamilyController extends Controller
 
     function sendOtp(Request $request)
     {
-        $phoneNumber = $request->input('phone_number');
-        $verificationCode = '123456'; // The verification code sent to the user
+       $data = [];
+        $mobileNumber = $request->input('mobile_number');
+        $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
 
-        $curl = curl_init();
+        if ($familyMembers->isEmpty()) {
+            $headnumber = Family::where('head_mobile_number', $mobileNumber)->get(['head_mobile_number']);
+           
+            if($headnumber->isEmpty()){
+                $data['status'] = "Error";
+                $data['message'] = 'This Number is not registerd with us';
+                $status = 400;
+                return response()->json($data, $status);
+                exit;
+            
+            }else{
+                $number = $headnumber[0]['head_mobile_number'];
+                $data['status'] = "Success";
+                $data['number'] = $number;
+                
+            }
+        }else{
+            $fId = $familyMembers[0]['family_id'];
+            $headnumber = Family::where('id', $fId)->get(['head_mobile_number']);
+            $number = $headnumber[0]['head_mobile_number'];
+            $data['status'] = "Success";
+            $data['number'] = $number;
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='AIzaSyBC92PdmZt6iytdT5-dRIEsNJ6x5j-kO1I'",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => json_encode(array(
-                "phoneNumber" => $phoneNumber,
-                "recaptchaToken" => "",
-                "iosReceipt" => "",
-                "androidReceipt" => "",
-                "requestType" => "phoneVerification",
-                "code" => $verificationCode
-            )),
-            CURLOPT_HTTPHEADER => array(
-                "Content-Type: application/json"
-            ),
-        ));
-
-        $response = curl_exec($curl);
-        print_r($response);exit;
-        $err = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($err) {
-            return response()->json([
-                'message' => 'Failed to send OTP'
-            ]);
-        } else {
-            return response()->json([
-                'message' => 'OTP sent successfully'
-            ]);
         }
+
+        return response()->json($data, 200);
+
     }
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $data = [];
-    	$validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
+
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|numeric|min:6',
         ]);
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-        if (! $token = auth('family_head')->attempt($validator->validated())) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+
+        $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
+
+        if (!$familyMember) {
+            $head = Family::where('head_mobile_number', $request->monile)->first();
+
+            if (!$head) {
+                $data['status'] = "Error";
+                $data['message'] = 'Please Enter Valid Mobile Number';
+                $status = 400;
+                return response()->json($data, $status);
+            } else {
+                $data['status'] = "Success";
+                $data['role'] = "Family Head";
+                $data['data'] = $head;
+            }
+        } else {
+            $data['status'] = "Success";
+            $data['role'] = "Family Member";
+            $data['data'] = $familyMember;
         }
-        
-        $a_token = $this->createNewToken($token);
-        $data['status'] = "Success";
-        $data['token'] = $a_token;
+
         return response()->json($data, 200);
     }
+
 }
