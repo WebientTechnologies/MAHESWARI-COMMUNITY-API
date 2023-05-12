@@ -39,6 +39,7 @@ Route::group([
 
     //Gallery Route//
     Route::get('/gallery', [GalleryController::class, 'index']);
+    Route::get('/get-gallery-by-id/{id}', [GalleryController::class, 'show']);
 
 
     //Family Head//
