@@ -51,6 +51,7 @@ Route::group([
     Route::post('/register-family-head', [FamilyController::class, 'register']);
     Route::post('/login', [FamilyController::class, 'login']);
     Route::post('/send-otp', [FamilyController::class, 'sendOtp']);
+    Route::post('/update/{id}', [FamilyController::class, 'update']);
 
     //Family Member Route//
     Route::post('/register-family-member', [FamilyMemberController::class, 'register']);
