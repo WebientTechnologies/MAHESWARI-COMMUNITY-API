@@ -12,6 +12,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\BirthdayWishController;
+use App\Http\Controllers\PromotionController;
 
 
 
@@ -40,6 +41,10 @@ Route::group([
     //Gallery Route//
     Route::get('/gallery', [GalleryController::class, 'index']);
     Route::get('/get-gallery-by-id/{id}', [GalleryController::class, 'show']);
+
+    //Promotion Route//
+    Route::get('/get-all-promotion', [PromotionController::class, 'index']);
+    Route::get('/get-promotion-by-id/{id}', [PromotionController::class, 'show']);
 
 
     //Family Head//
