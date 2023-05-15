@@ -11,6 +11,7 @@ use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\WinnerController;
 use App\Http\Controllers\BirthdayWishController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\BusinessController;
@@ -46,6 +47,14 @@ Route::group([
     //Promotion Route//
     Route::get('/get-all-promotion', [PromotionController::class, 'index']);
     Route::get('/get-promotion-by-id/{id}', [PromotionController::class, 'show']);
+
+    //Quiz Route//
+    Route::get('/get-all-quiz', [QuizController::class, 'index']);
+    Route::get('/get-quiz-by-id/{id}', [QuizController::class, 'show']);
+
+    //Winner Route//
+    Route::get('/get-all-winner', [WinnerController::class, 'index']);
+    Route::get('/get-winner-by-id/{id}', [WinnerController::class, 'show']);
 
 
     //Family Head//
@@ -85,8 +94,7 @@ Route::group([
     Route::get('/all-event', [EventController::class, 'index']);
     Route::get('/get-event-by-id/{id}', [EventController::class, 'show']);
     
-    //Quiz Route//
-    Route::get('/quiz-details', [QuizController::class, 'getQuizDetails']);
+    
 
     Route::post('/send-birthday-wish', [BirthdayWishController::class, 'send']);
 
