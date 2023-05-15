@@ -13,6 +13,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\BirthdayWishController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\BusinessController;
 
 
 
@@ -88,6 +89,14 @@ Route::group([
     Route::get('/quiz-details', [QuizController::class, 'getQuizDetails']);
 
     Route::post('/send-birthday-wish', [BirthdayWishController::class, 'send']);
+
+    //Business Route//
+    Route::get('/get-business', [BusinessController::class, 'index']);
+
+    Route::get('/get-business-by-id/{id}', [BusinessController::class, 'show']);
+    Route::post('/create-business', [BusinessController::class, 'store']);
+    Route::post('/update-business', [BusinessController::class, 'edit']);
+    Route::delete('/delete-business/{id}', [BusinessController::class, 'destroy']);
 
 });
 
