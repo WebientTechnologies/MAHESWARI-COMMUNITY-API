@@ -194,5 +194,130 @@ class FamilyController extends Controller
         }
     }
 
+    public function getMyFamily($familyId){
+        $data = [];
+        try{
+            $members = DB::table('family_members')
+            ->where('family_members.family_id', '=', $familyId)
+            ->get();
+             
+            $data['status'] = "Success";
+            $data['data'] = $members;
+
+            return response()->json($data, 200);
+        } catch (Exception $e){
+            $data['status'] = "Error";
+            $data['message'] = $e->getMessage();
+            return response()->json($data, 500);
+        }
+    }
+
+    public function editMemberByHead(Request $request, $id){
+        $data = [];
+        try{
+            // print_r($request->role);exit;
+            if($request->role == 'family_head'){
+
+                $family = FamilyMember::findOrFail($id);
+
+                if (!$family) {
+                    $data['status'] = "Error";
+                    $data['message'] = "Member not found";
+                    $status = 404;
+                    return response()->json($data, $status);
+                    exit;
+                }
+
+                if (FamilyMember::where('mobile_number', $request->mobile_number)->where('id', '!=', $id)->exists()) {
+                    $data['status'] = "Error";
+                    $data['message'] = "This Mobile Number is already exists.";
+                    $status = 409;
+                    return response()->json($data, $status);
+                    exit;
+                }
+                    $family->first_name = $request->input('first_name');
+                    $family->middle_name = $request->input('middle_name');
+                    $family->last_name = $request->input('last_name');
+                    $family->occupation = $request->input('occupation');
+                    $family->mobile_number = $request->input('mobile_number');
+                    $family->dob = $request->input('dob');
+                    $family->address = $request->input('address');
+                    $family->marital_status = $request->input('marital_status');
+                    $family->relationship_with_head = $request->input('relationship_with_head');
+                    $family->qualification = $request->input('qualification');
+                    $family->degree = $request->input('degree');
+                    $family->save();
+                
+                $data['status'] = "Success";
+                $data['message'] = 'Member details Updated';
+
+                return response()->json($data, 200);
+
+            }else{
+
+                $data['status'] = "Error";
+                $data['message'] = 'You are not authorized to Edit the Member';
+
+                return response()->json($data, 409);
+
+            }
+            
+        } catch (Exception $e){
+            $data['status'] = "Error";
+            $data['message'] = $e->getMessage();
+            return response()->json($data, 500);
+        }
+    }
+
+    public function addMemberByHead(Request $request, $familyId){
+        $data = [];
+        try{
+            // print_r($request->role);exit;
+            if($request->role == 'family_head'){
+
+                if (FamilyMember::where('mobile_number', $request->mobile_number)->exists()) {
+                    $data['status'] = "Error";
+                    $data['message'] = "This Mobile Number is already exists.";
+                    $status = 409;
+                    return response()->json($data, $status);
+                    exit;
+                }
+
+                $family = new FamilyMember;
+                $family->family_id = $familyId;
+                $family->first_name = $request->input('first_name');
+                $family->middle_name = $request->input('middle_name');
+                $family->last_name = $request->input('last_name');
+                $family->occupation = $request->input('occupation');
+                $family->mobile_number = $request->input('mobile_number');
+                $family->dob = $request->input('dob');
+                $family->address = $request->input('address');
+                $family->marital_status = $request->input('marital_status');
+                $family->relationship_with_head = $request->input('relationship_with_head');
+                $family->qualification = $request->input('qualification');
+                $family->degree = $request->input('degree');
+                $family->save();
+                
+                $data['status'] = "Success";
+                $data['message'] = 'Created Member';
+
+                return response()->json($data, 200);
+
+            }else{
+
+                $data['status'] = "Error";
+                $data['message'] = 'You are not authorized to Add the Member';
+
+                return response()->json($data, 409);
+
+            }
+            
+        } catch (Exception $e){
+            $data['status'] = "Error";
+            $data['message'] = $e->getMessage();
+            return response()->json($data, 500);
+        }
+    }
+
 
 }
