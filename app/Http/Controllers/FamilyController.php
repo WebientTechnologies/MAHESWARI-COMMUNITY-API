@@ -130,16 +130,69 @@ class FamilyController extends Controller
                 return response()->json($data, $status);
             } else {
                 $data['status'] = "Success";
-                $data['role'] = "Family Head";
+                $data['role'] = "family_head";
                 $data['data'] = $head;
             }
         } else {
             $data['status'] = "Success";
-            $data['role'] = "Family Member";
+            $data['role'] = "family_member";
             $data['data'] = $familyMember;
         }
 
         return response()->json($data, 200);
     }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $role = $request->role;
+
+            if($role == 'family_head'){
+                $family = Family::findOrFail($id);
+                $family->head_first_name = $request->input('first_name');
+                $family->head_middle_name = $request->input('middle_name');
+                $family->head_last_name = $request->input('last_name');
+                $family->head_occupation = $request->input('occupation');
+                $family->head_mobile_number = $request->input('mobile_number');
+                $family->head_dob = $request->input('dob');
+                $family->address = $request->input('address');
+                $family->marital_status = $request->input('marital_status');
+                $family->relationship_with_head = $request->input('relationship_with_head');
+                $family->qualification = $request->input('qualification');
+                $family->degree = $request->input('degree');
+                $family->save();
+
+            }
+
+            if($role == 'family_member'){
+                $family = FamilyMember::findOrFail($id);
+                $family->first_name = $request->input('first_name');
+                $family->middle_name = $request->input('middle_name');
+                $family->last_name = $request->input('last_name');
+                $family->occupation = $request->input('occupation');
+                $family->mobile_number = $request->input('mobile_number');
+                $family->dob = $request->input('dob');
+                $family->address = $request->input('address');
+                $family->marital_status = $request->input('marital_status');
+                $family->relationship_with_head = $request->input('relationship_with_head');
+                $family->qualification = $request->input('qualification');
+                $family->degree = $request->input('degree');
+                $family->save();
+
+            }
+            
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Family updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update family: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 
 }
