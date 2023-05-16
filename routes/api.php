@@ -65,10 +65,13 @@ Route::group([
     Route::get('/my-family/{familyId}', [FamilyController::class, 'getMyFamily']);
     Route::post('/edit-member-by-head/{id}', [FamilyController::class, 'editMemberByHead']);
     Route::post('/add-member-by-head/{familyId}', [FamilyController::class, 'addMemberByHead']);
+    Route::get('/get-request/{id}', [FamilyController::class, 'getMyRequest']);
+    Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);
 
     //Family Member Route//
     Route::post('/register-family-member', [FamilyMemberController::class, 'register']);
     Route::post('/family-member-login', [FamilyMemberController::class, 'login']);
+    Route::put('/update-member/{id}',[FamilyMemberController::class, 'update']);
 
     //Category Route//
     Route::get('/all-category', [CategoryController::class, 'index']);

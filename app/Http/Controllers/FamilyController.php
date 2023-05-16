@@ -18,6 +18,7 @@ use App\Mail\VerifyEmail;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
+use App\Models\Request as ChangeRequest;
 
 class FamilyController extends Controller
 {
@@ -319,5 +320,86 @@ class FamilyController extends Controller
         }
     }
 
+     public function getMyRequest($id){
+        $data = [];
+        try{
+            $requests = DB::table('requests')
+            ->where('head_id', '=', $id)
+            ->leftjoin('family_members as fm', 'requests.member_id', '=', 'fm.id')
+            ->get(['requests.id',
+            'requests.column_name',
+            'requests.old_value',
+            'requests.new_value',
+            'fm.id As member_id',
+            'fm.first_name As member_first_name',
+            'fm.middle_name As member_middle_name',
+            'fm.last_name As member_last_name',
+            'requests.status',
+            'requests.created_at',
+            'requests.updated_at',
+            'requests.deleted_at',
+            ]);
+             
+            $data['status'] = "Success";
+            $data['data'] = $requests;
+
+            return response()->json($data, 200);
+        } catch (Exception $e){
+            $data['status'] = "Error";
+            $data['message'] = $e->getMessage();
+            return response()->json($data, 500);
+        }
+     }
+
+     public function approve($requestId){
+        $req = ChangeRequest::findOrFail($requestId);
+        $column = $req->column_name;
+        $newValue = $req->new_value;
+        $memberId = $req->member_id;
+        $status = $req->status;
+        if($status == 'approved'){
+            return response()->json(['message' => 'request already Approved']);
+            exit;
+        }
+        $member = FamilyMember::findOrFail($memberId);
+        if($column == "first_name"){
+            $member->first_name = $newValue;
+        }
+        if($column == "middle_name"){
+            $member->middle_name = $newValue;
+        }
+        if($column == "last_name"){
+            $member->last_name = $newValue;
+        }
+        if($column == "occupation"){
+            $member->occupation = $newValue;
+        }
+        if($column == "dob"){
+            $member->dob = $newValue;
+        }
+        if($column == "mobile_number"){
+            $member->mobile_number = $newValue;
+        }
+        if($column == "address"){
+            $member->address = $newValue;
+        }
+        if($column == "relationship_with_head"){
+            $member->relationship_with_head = $newValue;
+        }
+        if($column == "marital_status"){
+            $member->marital_status = $newValue;
+        }
+        if($column == "qualification"){
+            $member->qualification = $newValue;
+        }
+        if($column == "degree"){
+            $member->degree = $newValue;
+        }
+        $member->save();
+        $req->status = 'approved';
+        $req->save();
+        return response()->json(['message' => 'request Approved']);
+     }
 
 }
+ 
