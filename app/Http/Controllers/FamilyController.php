@@ -121,7 +121,7 @@ class FamilyController extends Controller
         $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
 
         if (!$familyMember) {
-            $head = Family::where('head_mobile_number', $request->monile)->first();
+            $head = Family::where('head_mobile_number', $request->mobile)->first();
 
             if (!$head) {
                 $data['status'] = "Error";
