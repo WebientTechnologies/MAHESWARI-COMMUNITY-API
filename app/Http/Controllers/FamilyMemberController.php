@@ -154,14 +154,28 @@ class FamilyMemberController extends Controller
                 $request->status= 'pending';
                 $request->save();
             }
-
-            if($request->has('qualification')){
-                $newValue = $request->qualification;
-                $oldValue = $member->qualification;
+            if($request->has('marital_status')){
+                $newValue = $request->marital_status;
+                $oldValue = $member->marital_status;
                 
                 $request = new ChangeRequest;
 
-                $request->column_name = 'qualification';
+                $request->column_name = 'marital_status';
+                $request->old_value = $oldValue;
+                $request->new_value = $newValue;
+                $request->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $request->status= 'pending';
+                $request->save();
+            }
+
+            if($request->has('degree')){
+                $newValue = $request->degree;
+                $oldValue = $member->degree;
+                
+                $request = new ChangeRequest;
+
+                $request->column_name = 'degree';
                 $request->old_value = $oldValue;
                 $request->new_value = $newValue;
                 $request->member_id = $id;
