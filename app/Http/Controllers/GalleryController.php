@@ -15,7 +15,7 @@ class GalleryController extends Controller
     {
         $data = [];
         try{
-            $galleries = Gallery::where('deleted_at',null)->get(['id', 'name','description', 'event_name', 'album_name', 'type', 'source']);
+            $galleries = Gallery::where('deleted_at',null)->where('source','media')->get(['id', 'name','description', 'event_name', 'album_name', 'type', 'source']);
             // $media = Gallery::where('deleted_at',null)->get(['id', 'name', 'event_name', 'album_name', 'type', 'source']);
             $media = [];
             for($i = 0; $i < sizeof($galleries); $i++){
