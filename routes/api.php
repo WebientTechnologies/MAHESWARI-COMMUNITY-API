@@ -103,6 +103,7 @@ Route::group([
 
     //Business Route//
     Route::get('/get-business', [BusinessController::class, 'index']);
+    Route::get('/get-business-by-family', [BusinessController::class, 'getBusinessForFamily']);
 
     Route::get('/get-business-by-id/{id}', [BusinessController::class, 'show']);
     Route::post('/create-business', [BusinessController::class, 'store']);

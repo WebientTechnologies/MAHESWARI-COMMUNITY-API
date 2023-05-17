@@ -351,7 +351,7 @@ class FamilyController extends Controller
         }
      }
 
-     public function approve($requestId){
+     public function approve(Request $request, $requestId){
         $req = ChangeRequest::findOrFail($requestId);
         $column = $req->column_name;
         $newValue = $req->new_value;
@@ -396,10 +396,11 @@ class FamilyController extends Controller
             $member->degree = $newValue;
         }
         $member->save();
-        $req->status = 'approved';
+        $req->status = $request->status;
         $req->save();
-        return response()->json(['message' => 'request Approved']);
+        return response()->json(['message' => 'Status Changed']);
      }
+
 
 }
  
