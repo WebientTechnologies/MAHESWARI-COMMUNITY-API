@@ -16,6 +16,7 @@ class BusinessController extends Controller
             $businesses = DB::table('businesses')
                 ->where('businesses.deleted_at', null)
                 ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+                ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
                 ->orderBy('id', 'DESC')
                 ->get([
                     'businesses.id',
@@ -23,6 +24,8 @@ class BusinessController extends Controller
                     'businesses.owner_name',
                     'cat.id AS category_id',
                     'cat.name AS category_name',
+                    'subcat.id AS subcategory_id',
+                    'subcat.name AS subcategory_name',
                     'businesses.subcategory_id',
                     'businesses.address',
                     'businesses.contact_number',
@@ -32,24 +35,24 @@ class BusinessController extends Controller
                 ]);
 
             $data['status'] = "Success";
-            $data['data'] = [];
+            $data['data'] =  $businesses;
 
-            foreach ($businesses as $business) {
-                $subcatIds = $business->subcategory_id;
-                $subcatIds = json_decode($subcatIds, true);
-                $subcategories = [];
+            // foreach ($businesses as $business) {
+            //     $subcatIds = $business->subcategory_id;
+            //     $subcatIds = json_decode($subcatIds, true);
+            //     $subcategories = [];
 
-                foreach ($subcatIds as $subcatId) {
-                    $subcategory = DB::table('subcategories')
-                        ->where('subcategories.id', $subcatId)
-                        ->get(['subcategories.id', 'subcategories.name']);
+            //     foreach ($subcatIds as $subcatId) {
+            //         $subcategory = DB::table('subcategories')
+            //             ->where('subcategories.id', $subcatId)
+            //             ->get(['subcategories.id', 'subcategories.name']);
 
-                    $subcategories[] = $subcategory;
-                }
+            //         $subcategories[] = $subcategory;
+            //     }
 
-                $business->sub_category = $subcategories;
-                $data['data'][] = $business;
-            }
+            //     $business->sub_category = $subcategories;
+            //     $data['data'][] = $business;
+            // }
 
             return response()->json($data, 200);
         } catch (Exception $e) {
@@ -73,7 +76,9 @@ public function getBusinessForFamily(Request $request){
         $businesses = DB::table('businesses')
         ->whereIn('businesses.owner_id', $familyMemberIds)
         ->orWhere('businesses.owner_id', $logedInUserId)
+        ->where('businesses.deleted_at', null)
         ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+        ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
         ->orderBy('id', 'DESC')
         ->get([
             'businesses.id',
@@ -81,6 +86,8 @@ public function getBusinessForFamily(Request $request){
             'businesses.owner_name',
             'cat.id AS category_id',
             'cat.name AS category_name',
+            'subcat.id AS subcategory_id',
+            'subcat.name AS subcategory_name',
             'businesses.subcategory_id',
             'businesses.address',
             'businesses.file',
@@ -106,7 +113,9 @@ public function getBusinessForFamily(Request $request){
 
         $businesses = DB::table('businesses')
         ->Where('businesses.owner_id', $logedInUserId)
+        ->where('businesses.deleted_at', null)
         ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+        ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
         ->orderBy('id', 'DESC')
         ->get([
             'businesses.id',
@@ -114,6 +123,8 @@ public function getBusinessForFamily(Request $request){
             'businesses.owner_name',
             'cat.id AS category_id',
             'cat.name AS category_name',
+            'subcat.id AS subcategory_id',
+            'subcat.name AS subcategory_name',
             'businesses.subcategory_id',
             'businesses.address',
             'businesses.file',
@@ -147,14 +158,18 @@ public function getBusinessForFamily(Request $request){
         $data = [];
         try {
             $business = DB::table('businesses')
-                ->where('businesses.id', '=', $id)
+                ->where('businesses.id', '=', $id)   
+                ->where('businesses.deleted_at', null)
                 ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+                ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
                 ->get([
                     'businesses.id',
                     'businesses.business_name',
                     'businesses.owner_name',
                     'cat.id AS category_id',
                     'cat.name AS category_name',
+                    'subcat.id AS subcategory_id',
+                    'subcat.name AS subcategory_name',
                     'businesses.subcategory_id',
                     'businesses.address',
                     'businesses.contact_number',
@@ -164,17 +179,17 @@ public function getBusinessForFamily(Request $request){
                 ]);
 
             $data['status'] = "Success";
-            $data['data'] = [];
+            $data['data'] = $business;
 
-            $subcatIds = $business[0]->subcategory_id;
-            $subcatIds = json_decode($subcatIds, true);
+            // $subcatIds = $business[0]->subcategory_id;
+            // $subcatIds = json_decode($subcatIds, true);
 
-            $subcategory = DB::table('subcategories')
-                ->whereIn('subcategories.id', $subcatIds)
-                ->get(['subcategories.id', 'subcategories.name']);
+            // $subcategory = DB::table('subcategories')
+            //     ->whereIn('subcategories.id', $subcatIds)
+            //     ->get(['subcategories.id', 'subcategories.name']);
 
-            $business->sub_category = $subcategory;
-            $data['data'][] = $business;
+            // $business->sub_category = $subcategory;
+            // $data['data'][] = $business;
 
             return response()->json($data, 200);
         } catch (Exception $e) {
@@ -225,7 +240,7 @@ public function getBusinessForFamily(Request $request){
             $business->owner_id = $params['owner_id'];
             $business->file = $name;
             $business->category_id = $params['category_id'];
-            $business->subcategory_id = json_encode($request->subcategory_id); 
+            $business->subcategory_id = $request->subcategory_id; 
             $business->address = $request->address;
             $business->contact_number = $request->contact_number;
             $business->save();
@@ -292,7 +307,7 @@ public function getBusinessForFamily(Request $request){
                 $business->owner_name = $params['owner_name'];
                 $business->file = $name;
                 $business->category_id = $params['category_id'];
-                $business->subcategory_id = json_encode($request->subcategory_id); 
+                $business->subcategory_id = $request->subcategory_id; 
                 $business->address = $request->address;
                 $business->contact_number = $request->contact_number;
                 $business->save();

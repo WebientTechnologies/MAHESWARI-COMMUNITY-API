@@ -72,6 +72,7 @@ Route::group([
     Route::post('/register-family-member', [FamilyMemberController::class, 'register']);
     Route::post('/family-member-login', [FamilyMemberController::class, 'login']);
     Route::put('/update-member/{id}',[FamilyMemberController::class, 'update']);
+    Route::delete('/delete-member/{id}',[FamilyMemberController::class, 'destroy']);
 
     //Category Route//
     Route::get('/all-category', [CategoryController::class, 'index']);

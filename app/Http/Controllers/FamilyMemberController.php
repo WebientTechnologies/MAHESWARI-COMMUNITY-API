@@ -188,5 +188,35 @@ class FamilyMemberController extends Controller
     
     }
 
+    public function destroy(Request $request, $id){
+
+        $data = [];
+        try{
+            
+            $member = FamilyMember::find($id);
+            if(empty($member)){
+
+                $data['status'] = "Error";
+                $data['message'] = "member not found.";
+                $status = 401;
+                return response()->json($data, $status);
+                exit;
+            }
+            $member->delete();
+
+            $data['status'] = "Success";
+            $data['message'] = "Record deleted.";
+            $status = 200;
+            
+            return response()->json($data, $status);
+            
+
+        } catch (Exception $e){
+            $data['status'] = "Error";
+            $data['message'] = $e->getMessage();
+            return response()->json($data, 500);
+        }
+    }
+
 
 }
