@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use App\Models\Business;
+use App\Models\FamilyMember;
+use App\Models\Family;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -84,6 +86,7 @@ public function getBusinessForFamily(Request $request){
             'businesses.id',
             'businesses.business_name',
             'businesses.owner_name',
+            'businesses.owner_id',
             'cat.id AS category_id',
             'cat.name AS category_name',
             'subcat.id AS subcategory_id',
@@ -110,9 +113,11 @@ public function getBusinessForFamily(Request $request){
 
     }
     if($role == 'family_member'){
-
+        $head = FamilyMember::where('id',$logedInUserId)->first('family_id');
+        $head_id = $head->family_id;
         $businesses = DB::table('businesses')
         ->Where('businesses.owner_id', $logedInUserId)
+        ->orWhere('businesses.owner_id', $head_id)
         ->where('businesses.deleted_at', null)
         ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
         ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
@@ -121,6 +126,7 @@ public function getBusinessForFamily(Request $request){
             'businesses.id',
             'businesses.business_name',
             'businesses.owner_name',
+            'businesses.owner_id',
             'cat.id AS category_id',
             'cat.name AS category_name',
             'subcat.id AS subcategory_id',

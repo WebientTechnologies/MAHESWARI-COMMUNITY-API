@@ -63,7 +63,7 @@ Route::group([
     Route::post('/login', [FamilyController::class, 'login']);
     Route::post('/send-otp', [FamilyController::class, 'sendOtp']);
     Route::post('/update/{id}', [FamilyController::class, 'update']);
-    Route::get('/my-family/{familyId}', [FamilyController::class, 'getMyFamily']);
+    Route::get('/my-family/{id}/{role}', [FamilyController::class, 'getMyFamily']);
     Route::post('/edit-member-by-head/{id}', [FamilyController::class, 'editMemberByHead']);
     Route::post('/add-member-by-head/{familyId}', [FamilyController::class, 'addMemberByHead']);
     Route::get('/get-request/{id}', [FamilyController::class, 'getMyRequest']);
