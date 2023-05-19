@@ -15,6 +15,7 @@ use App\Http\Controllers\WinnerController;
 use App\Http\Controllers\BirthdayWishController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\WishController;
 
 
 
@@ -66,12 +67,14 @@ Route::group([
     Route::post('/edit-member-by-head/{id}', [FamilyController::class, 'editMemberByHead']);
     Route::post('/add-member-by-head/{familyId}', [FamilyController::class, 'addMemberByHead']);
     Route::get('/get-request/{id}', [FamilyController::class, 'getMyRequest']);
-    Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);
+    Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);   
+    Route::get('/get-profile/{id}/{role}', [FamilyController::class, 'profile']);
 
     //Family Member Route//
+    Route::get('/birthday/{id}/{role}',[FamilyMemberController::class, 'birthday']);
     Route::post('/register-family-member', [FamilyMemberController::class, 'register']);
     Route::post('/family-member-login', [FamilyMemberController::class, 'login']);
-    Route::put('/update-member/{id}',[FamilyMemberController::class, 'update']);
+    Route::put('/update-member/{id}/{role}',[FamilyMemberController::class, 'update']);
     Route::delete('/delete-member/{id}',[FamilyMemberController::class, 'destroy']);
 
     //Category Route//
@@ -98,7 +101,9 @@ Route::group([
     Route::get('/all-event', [EventController::class, 'index']);
     Route::get('/get-event-by-id/{id}', [EventController::class, 'show']);
     
-    
+    //Wish Route//
+    Route::post('/send-wish', [wishController::class, 'wish']);
+    Route::get('/get-my-wishes/{id}', [wishController::class, 'getMyWish']);
 
     Route::post('/send-birthday-wish', [BirthdayWishController::class, 'send']);
 

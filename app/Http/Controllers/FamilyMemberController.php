@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\FamilyMember;
 
+use App\Models\Family;
 use App\Models\Request as ChangeRequest;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -20,9 +21,10 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class FamilyMemberController extends Controller
 {
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, $role)
     {
-        $member = FamilyMember::where('id', $id)->first();
+        if($role == 'family_member'){
+            $member = FamilyMember::where('id', $id)->first();
 
             if($request->has('first_name')){
                 $newValue = $request->first_name;  
@@ -185,7 +187,100 @@ class FamilyMemberController extends Controller
             }
 
             return response()->json(['message' => 'Request saved successfully']);
+
+        }
+        if($role == 'family_head'){
+            $family = Family::findOrFail($id);
+            $family->head_first_name = $request->input('head_first_name');
+            $family->head_middle_name = $request->input('head_middle_name');
+            $family->head_last_name = $request->input('head_last_name');
+            $family->head_occupation = $request->input('head_occupation');
+            $family->head_mobile_number = $request->input('head_mobile_number');
+            $family->head_dob = $request->input('head_dob');
+            $family->address = $request->input('address');
+            $family->marital_status = $request->input('marital_status');
+            $family->relationship_with_head = $request->input('relationship_with_head');
+            $family->qualification = $request->input('qualification');
+            $family->degree = $request->input('degree');
+            $family->save();
+
+            return response()->json(['message' => 'Record Updated successfully']);
+        }
+        
     
+    }
+
+    public function birthday($id,$role){
+        $birthdayDetails = [];
+        $data = [];
+        $today = Carbon::today();
+        if($role == 'family_head'){
+            $members =  DB::table('family_members')
+                                ->where('family_members.family_id', $id)
+                                ->whereMonth('family_members.dob', $today->month)
+                                ->whereDay('family_members.dob', $today->day)
+                                ->get();
+            
+
+            // Add family members' details to the response
+            foreach ($members as $member) {
+                $birthdayDetails[] = [
+                    'id' =>$member->id,
+                    'first_name' => $member->first_name,
+                    'middle_name' => $member->middle_name,
+                    'last_name' => $member->last_name,
+                    'dob' => $member->dob,
+                ];
+            }
+            // print_r($data);exit;
+            
+        }
+
+        if($role == 'family_member'){
+
+            $head = FamilyMember::where('id',$id)->first('family_id');
+            $head_id = $head->family_id;
+            $members = FamilyMember::where('family_id', $head_id )
+            ->where('id', '!=', $id)
+            ->whereMonth('dob', $today->month)
+            ->whereDay('dob', $today->day)
+            ->get();
+
+            $family = Family::where('id', $head_id)
+            ->whereMonth('head_dob', $today->month)
+            ->whereDay('head_dob', $today->day)
+            ->first();
+
+            
+
+            // Add family members' details to the response
+            foreach ($members as $member) {
+                $birthdayDetails[] = [
+                    'id' =>$member->id,
+                    'first_name' => $member->first_name,
+                    'middle_name' => $member->middle_name,
+                    'last_name' => $member->last_name,
+                    'dob' => $member->dob,
+                ];
+            }
+
+            // Add family details to the response
+            if ($family) {
+                $birthdayDetails[] = [
+                    'id' =>$family->id,
+                    'first_name' => $family->head_first_name,
+                    'middle_name' => $family->head_middle_name,
+                    'last_name' => $family->head_last_name,
+                    'dob' => $family->head_dob,
+                ];
+            }         
+            
+        }
+        $data['status'] = 'success';
+        $data['message'] = 'Today is Birthday';
+        $data['data'] = $birthdayDetails;
+        $status =200;
+        return response()->json($data, $status);
     }
 
     public function destroy(Request $request, $id){
