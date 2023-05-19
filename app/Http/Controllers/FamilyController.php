@@ -200,6 +200,7 @@ class FamilyController extends Controller
         try{
             $members = DB::table('family_members')
             ->where('family_members.family_id', '=', $familyId)
+            ->where('family_members.deleted_at', '=', null)
             ->get();
              
             $data['status'] = "Success";
@@ -324,7 +325,8 @@ class FamilyController extends Controller
         $data = [];
         try{
             $requests = DB::table('requests')
-            ->where('head_id', '=', $id)
+            ->where('requests.head_id', '=', $id)
+            ->where('requests.status','=', 'pending')
             ->leftjoin('family_members as fm', 'requests.member_id', '=', 'fm.id')
             ->get(['requests.id',
             'requests.column_name',
@@ -401,6 +403,26 @@ class FamilyController extends Controller
         return response()->json(['message' => 'Status Changed']);
      }
 
+
+     public function profile($id, $role)
+        {
+            $data= [];
+            if($role == 'family_member'){
+                $profile = FamilyMember::where('id', $id)->first();
+                $data['status'] = "Success";
+                $data['role'] = "family_member";
+                $data['data'] = $profile;
+            }
+
+            if ($role == 'family_head') {
+                $profile = Family::where('id', $id)->first();
+                $data['status'] = "Success";
+                $data['role'] = "family_head";
+                $data['data'] = $profile;
+            }
+
+            return response()->json($data, 200);
+        }
 
 }
  
