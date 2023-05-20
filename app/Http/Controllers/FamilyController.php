@@ -119,6 +119,13 @@ class FamilyController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        if($request->device_token == "" || $request->device_token == null){
+            $data['status'] = "Error";
+            $data['message'] = 'Invalid Login Token';
+            $status = 400;
+            return response()->json($data, $status);exit;
+        }
+
         $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
 
         if (!$familyMember) {
@@ -130,11 +137,15 @@ class FamilyController extends Controller
                 $status = 400;
                 return response()->json($data, $status);
             } else {
+                $head->device_token = $request->device_token;
+                $head->save();
                 $data['status'] = "Success";
                 $data['role'] = "family_head";
                 $data['data'] = $head;
             }
         } else {
+            $familyMember->device_token = $request->device_token;
+            $familyMember->save();
             $data['status'] = "Success";
             $data['role'] = "family_member";
             $data['data'] = $familyMember;
@@ -195,13 +206,58 @@ class FamilyController extends Controller
         }
     }
 
-    public function getMyFamily($familyId){
+    public function getMyFamily($id, $role){
         $data = [];
         try{
-            $members = DB::table('family_members')
-            ->where('family_members.family_id', '=', $familyId)
-            ->where('family_members.deleted_at', '=', null)
-            ->get();
+            if($role == 'family_head'){
+                $members = DB::table('family_members')
+                ->where('family_members.family_id', '=', $id)
+                ->where('family_members.deleted_at', '=', null)
+                ->get([
+                'family_members.id',
+                'family_members.first_name',
+                'family_members.middle_name',
+                'family_members.last_name',
+                'family_members.dob',
+                'family_members.mobile_number',
+                'family_members.address',
+                'family_members.relationship_with_head',]);
+            }
+            if($role == 'family_member'){
+                $head = FamilyMember::where('id',$id)->first('family_id');
+                $head_id = $head->family_id;
+
+                $members = DB::table('family_members')
+                ->where('family_members.family_id', '=', $head_id)
+                ->where('family_members.deleted_at', '=', null)
+                ->get([
+                'family_members.id',
+                'family_members.first_name',
+                'family_members.middle_name',
+                'family_members.last_name',
+                'family_members.dob',
+                'family_members.mobile_number',
+                'family_members.address',
+                'family_members.relationship_with_head',]);
+
+            
+
+            $head = DB::table('families')
+            ->where('families.id',$head_id)
+            ->get([
+                'families.id As head_id',
+                'families.head_first_name',
+                'families.head_middle_name',
+                'families.head_last_name',
+                'families.head_dob',
+                'families.head_mobile_number',
+                'families.address',
+                'families.relationship_with_head',]);
+            
+
+            }
+            
+            $members = $members->merge($head);
              
             $data['status'] = "Success";
             $data['data'] = $members;
