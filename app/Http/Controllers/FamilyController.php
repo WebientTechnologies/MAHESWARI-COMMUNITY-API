@@ -119,6 +119,13 @@ class FamilyController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
+        if($request->device_token == "" || $request->device_token == null){
+            $data['status'] = "Error";
+            $data['message'] = 'Invalid Login Token';
+            $status = 400;
+            return response()->json($data, $status);exit;
+        }
+
         $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
 
         if (!$familyMember) {
@@ -130,11 +137,15 @@ class FamilyController extends Controller
                 $status = 400;
                 return response()->json($data, $status);
             } else {
+                $head->device_token = $request->device_token;
+                $head->save();
                 $data['status'] = "Success";
                 $data['role'] = "family_head";
                 $data['data'] = $head;
             }
         } else {
+            $familyMember->device_token = $request->device_token;
+            $familyMember->save();
             $data['status'] = "Success";
             $data['role'] = "family_member";
             $data['data'] = $familyMember;
