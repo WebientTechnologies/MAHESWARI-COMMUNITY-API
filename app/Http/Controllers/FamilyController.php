@@ -536,9 +536,11 @@ class FamilyController extends Controller
         ]);
     }
 
-    public function show(Request $request)
+    public function familyDirectory(Request $request)
     {
-        $keyword = $request->input('keyword'); 
+        $firstName = $request->input('first_name'); 
+        $middleName = $request->input('middle_name'); 
+        $lastName = $request->input('last_name');  
     
         $membersQuery = DB::table('family_members')
             ->whereNull('family_members.deleted_at')
@@ -557,21 +559,22 @@ class FamilyController extends Controller
                 'fa.head_mobile_number'
             );
     
-        if ($keyword) {
-            $membersQuery->where(function ($query) use ($keyword) {
-                $query->where('family_members.first_name', 'like', "%$keyword%")
-                    ->orWhere('family_members.middle_name', 'like', "%$keyword%")
-                    ->orWhere('family_members.last_name', 'like', "%$keyword%")
-                    ->orWhere('fa.head_first_name', 'like', "%$keyword%")
-                    ->orWhere('fa.head_middle_name', 'like', "%$keyword%")
-                    ->orWhere('fa.head_last_name', 'like', "%$keyword%")
-                    ->orWhere(function ($subQuery) use ($keyword) {
-                        $subQuery->where('family_members.first_name', 'like', "%$keyword%")
-                            ->where('family_members.middle_name', 'like', "%$keyword%")
-                            ->where('family_members.last_name', 'like', "%$keyword%");
-                    });
-            });
-        }
+            if ($firstName) {
+                $membersQuery->where('family_members.first_name', '=', $firstName)
+                ->orWhere('fa.head_first_name', '=', $firstName);
+            }
+        
+            if ($middleName) {
+                $membersQuery->where('family_members.middle_name', '=', $middleName)
+                ->orWhere('fa.head_middle_name', '=', $middleName);
+            }
+        
+            if ($lastName) {
+                $membersQuery->where('family_members.last_name', '=', $lastName)
+                ->orWhere('fa.head_last_name', '=', $lastName);
+            }
+
+            
     
         $members = $membersQuery->get();
 

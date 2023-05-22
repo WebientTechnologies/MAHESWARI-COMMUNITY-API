@@ -70,7 +70,7 @@ Route::group([
     Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);   
     Route::get('/get-profile/{id}/{role}', [FamilyController::class, 'profile']);
     Route::get('/search', [FamilyController::class, 'search']);
-    Route::get('/family-directory', [FamilyController::class, 'show']);
+    Route::post('/family-directory', [FamilyController::class, 'familyDirectory']);
 
     //Family Member Route//
     Route::get('/birthday/{id}/{role}',[FamilyMemberController::class, 'birthday']);
