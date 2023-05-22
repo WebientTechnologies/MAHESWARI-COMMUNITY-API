@@ -21,24 +21,24 @@ class CategoryController extends Controller
         
         $data = [];
         try{
-            $categories = DB::table('categories')
-            ->where('categories.deleted_at', null)
-            ->leftJoin('users as ucb', 'categories.created_by', '=', 'ucb.id')
-            ->leftJoin('users as uub', 'categories.updated_by', '=', 'uub.id')
-            ->leftJoin('users as udb', 'categories.deleted_by', '=', 'udb.id')
-            ->orderBy('id','DESC')
-            ->get(['categories.id',
-            'categories.name',
-            'ucb.id AS created_by_uid',
-            'ucb.name AS created_by_name',
-            'uub.id AS updated_by_uid',
-            'uub.name AS updated_by_name',
-            'udb.id AS deleted_by_uid',
-            'udb.name AS deleted_by_name',
-            'categories.created_at',
-            'categories.updated_at',
-            'categories.deleted_at',
-            ]);
+            $categories = Category::with('subcategories')
+                ->leftJoin('users as ucb', 'categories.created_by', '=', 'ucb.id')
+                ->leftJoin('users as uub', 'categories.updated_by', '=', 'uub.id')
+                ->leftJoin('users as udb', 'categories.deleted_by', '=', 'udb.id')
+                ->orderBy('categories.id', 'DESC')
+                ->get([
+                    'categories.id',
+                    'categories.name',
+                    'ucb.id AS created_by_uid',
+                    'ucb.name AS created_by_name',
+                    'uub.id AS updated_by_uid',
+                    'uub.name AS updated_by_name',
+                    'udb.id AS deleted_by_uid',
+                    'udb.name AS deleted_by_name',
+                    'categories.created_at',
+                    'categories.updated_at',
+                    'categories.deleted_at',
+                ]);
 
 
            
