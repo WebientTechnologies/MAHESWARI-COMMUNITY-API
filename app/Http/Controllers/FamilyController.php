@@ -221,12 +221,40 @@ class FamilyController extends Controller
                 'family_members.dob',
                 'family_members.mobile_number',
                 'family_members.address',
-                'family_members.relationship_with_head',]);
+                'family_members.relationship_with_head',
+                'family_members.qualification',
+                'family_members.degree',
+                'family_members.occupation',
+                'family_members.marital_status',
+                ]);
+ 
+                $head = DB::table('families')
+                ->where('families.id',$id)
+                ->get([
+                'families.id',
+                'families.head_first_name As first_name',
+                'families.head_middle_name AS middle_name',
+                'families.head_last_name AS last_name',
+                'families.head_dob AS dob',
+                'families.head_mobile_number AS mobile_number',
+                'families.address',
+                'families.relationship_with_head',
+                'families.qualification',
+                'families.degree',
+                'families.head_occupation AS occupation',
+                'families.marital_status',
+                ]);
+            
+           
+                $members = $members->merge($head);
+                 
+                $data['status'] = "Success";
+                $data['data'] = $members;
+                                        
             }
             if($role == 'family_member'){
                 $head = FamilyMember::where('id',$id)->first('family_id');
                 $head_id = $head->family_id;
-
                 $members = DB::table('family_members')
                 ->where('family_members.family_id', '=', $head_id)
                 ->where('family_members.deleted_at', '=', null)
@@ -238,30 +266,36 @@ class FamilyController extends Controller
                 'family_members.dob',
                 'family_members.mobile_number',
                 'family_members.address',
-                'family_members.relationship_with_head',]);
-
+                'family_members.relationship_with_head',
+                'family_members.qualification',
+                'family_members.degree',
+                'family_members.occupation',
+                'family_members.marital_status',
+                ]);
             
-
             $head = DB::table('families')
             ->where('families.id',$head_id)
             ->get([
-                'families.id As head_id',
-                'families.head_first_name',
-                'families.head_middle_name',
-                'families.head_last_name',
-                'families.head_dob',
-                'families.head_mobile_number',
+                'families.id',
+                'families.head_first_name As first_name',
+                'families.head_middle_name AS middle_name',
+                'families.head_last_name AS last_name',
+                'families.head_dob AS dob',
+                'families.head_mobile_number AS mobile_number',
                 'families.address',
-                'families.relationship_with_head',]);
+                'families.relationship_with_head',
+                'families.qualification',
+                'families.degree',
+                'families.head_occupation AS occupation',
+                'families.marital_status',
+                ]);
             
-
+            
+                $members = $members->merge($head);
+                 
+                $data['status'] = "Success";
+                $data['data'] = $members;
             }
-            
-            $members = $members->merge($head);
-             
-            $data['status'] = "Success";
-            $data['data'] = $members;
-
             return response()->json($data, 200);
         } catch (Exception $e){
             $data['status'] = "Error";
@@ -479,6 +513,61 @@ class FamilyController extends Controller
 
             return response()->json($data, 200);
         }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        // Search in the 'families' table
+        $families = Family::where('head_first_name', 'LIKE', "%$query%")
+            ->orWhere('head_middle_name', 'LIKE', "%$query%")
+            ->orWhere('head_last_name', 'LIKE', "%$query%")
+            ->get();
+
+        // Search in the 'family_members' table
+        $familyMembers = FamilyMember::where('first_name', 'LIKE', "%$query%")
+            ->orWhere('middle_name', 'LIKE', "%$query%")
+            ->orWhere('last_name', 'LIKE', "%$query%")
+            ->get();
+
+        return response()->json([
+            'families' => $families,
+            'familyMembers' => $familyMembers
+        ]);
+    }
+
+    public function show()
+    {
+        $families = Family::with('members')->get();
+
+    $result = [];
+
+    foreach ($families as $family) {
+        $head = [
+            'head_first_name' => $family->head_first_name,
+            'head_middle_name' => $family->head_middle_name,
+            'head_last_name' => $family->head_last_name,
+            'head_mobile_number' => $family->head_mobile_number,
+        ];
+
+        $members = $family->members->map(function ($member) {
+            return [
+                'first_name' => $member->first_name,
+                'middle_name' => $member->middle_name,
+                'last_name' => $member->last_name,
+                'dob' => $member->dob,
+                'relationship_with_head' => $member->relationship_with_head,
+            ];
+        });
+
+        $result[] = [
+            'head' => $head,
+            'members' => $members,
+        ];
+        }
+
+        return response()->json($result);
+    }
 
 }
  

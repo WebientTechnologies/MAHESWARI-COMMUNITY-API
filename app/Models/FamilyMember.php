@@ -33,4 +33,9 @@ class FamilyMember extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims() {
         return [];
     }
+
+    public function family()
+    {
+        return $this->belongsTo(Family::class);
+    }
 }
