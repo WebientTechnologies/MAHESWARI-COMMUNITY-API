@@ -69,6 +69,8 @@ Route::group([
     Route::get('/get-request/{id}', [FamilyController::class, 'getMyRequest']);
     Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);   
     Route::get('/get-profile/{id}/{role}', [FamilyController::class, 'profile']);
+    Route::get('/search', [FamilyController::class, 'search']);
+    Route::get('/family-directory', [FamilyController::class, 'show']);
 
     //Family Member Route//
     Route::get('/birthday/{id}/{role}',[FamilyMemberController::class, 'birthday']);

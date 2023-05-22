@@ -267,21 +267,16 @@ public function getBusinessForFamily(Request $request){
     }
 
     public function edit(Request $request){
-
         $data = [];
         try{
             $params = $request->all();
-
             if (empty($params['business_name']) || empty($params['owner_name']) || empty($params['category_id'] )){
                 $data['status'] = "Error";
                 $data['message'] = "Missing params.";
-
                 $status = 400;
                 return response()->json($data, $status);
                 exit;
-
             }
-
             
             if (Business::where('business_name', $params['business_name'])->where('id','!=',$params['id'])->exists()) {
                 $data['status'] = "Error";
@@ -290,11 +285,8 @@ public function getBusinessForFamily(Request $request){
                 return response()->json($data, $status);
                 exit;
             }
-
             $business = Business::find($params['id']);
-
             if(!empty($business)){
-
                 if($request->hasFile('file')) {
                     $allowedfileExtension=['jpg','png','jpeg', 'avif'];
                     $file = $request->file('file'); 
@@ -306,12 +298,12 @@ public function getBusinessForFamily(Request $request){
                         $name = 'community-'.time().'.'.$extension;
                         Storage::disk('s3')->put($name, file_get_contents($file));     
                     }
-                    
+                    $business->file = $name;
                 }
             
                 $business->business_name = $params['business_name'];
                 $business->owner_name = $params['owner_name'];
-                $business->file = $name;
+                
                 $business->category_id = $params['category_id'];
                 $business->subcategory_id = $request->subcategory_id; 
                 $business->address = $request->address;

@@ -221,12 +221,40 @@ class FamilyController extends Controller
                 'family_members.dob',
                 'family_members.mobile_number',
                 'family_members.address',
-                'family_members.relationship_with_head',]);
+                'family_members.relationship_with_head',
+                'family_members.qualification',
+                'family_members.degree',
+                'family_members.occupation',
+                'family_members.marital_status',
+                ]);
+ 
+                $head = DB::table('families')
+                ->where('families.id',$id)
+                ->get([
+                'families.id',
+                'families.head_first_name As first_name',
+                'families.head_middle_name AS middle_name',
+                'families.head_last_name AS last_name',
+                'families.head_dob AS dob',
+                'families.head_mobile_number AS mobile_number',
+                'families.address',
+                'families.relationship_with_head',
+                'families.qualification',
+                'families.degree',
+                'families.head_occupation AS occupation',
+                'families.marital_status',
+                ]);
+            
+           
+                $members = $members->merge($head);
+                 
+                $data['status'] = "Success";
+                $data['data'] = $members;
+                                        
             }
             if($role == 'family_member'){
                 $head = FamilyMember::where('id',$id)->first('family_id');
                 $head_id = $head->family_id;
-
                 $members = DB::table('family_members')
                 ->where('family_members.family_id', '=', $head_id)
                 ->where('family_members.deleted_at', '=', null)
@@ -238,30 +266,36 @@ class FamilyController extends Controller
                 'family_members.dob',
                 'family_members.mobile_number',
                 'family_members.address',
-                'family_members.relationship_with_head',]);
-
+                'family_members.relationship_with_head',
+                'family_members.qualification',
+                'family_members.degree',
+                'family_members.occupation',
+                'family_members.marital_status',
+                ]);
             
-
             $head = DB::table('families')
             ->where('families.id',$head_id)
             ->get([
-                'families.id As head_id',
-                'families.head_first_name',
-                'families.head_middle_name',
-                'families.head_last_name',
-                'families.head_dob',
-                'families.head_mobile_number',
+                'families.id',
+                'families.head_first_name As first_name',
+                'families.head_middle_name AS middle_name',
+                'families.head_last_name AS last_name',
+                'families.head_dob AS dob',
+                'families.head_mobile_number AS mobile_number',
                 'families.address',
-                'families.relationship_with_head',]);
+                'families.relationship_with_head',
+                'families.qualification',
+                'families.degree',
+                'families.head_occupation AS occupation',
+                'families.marital_status',
+                ]);
             
-
+            
+                $members = $members->merge($head);
+                 
+                $data['status'] = "Success";
+                $data['data'] = $members;
             }
-            
-            $members = $members->merge($head);
-             
-            $data['status'] = "Success";
-            $data['data'] = $members;
-
             return response()->json($data, 200);
         } catch (Exception $e){
             $data['status'] = "Error";
@@ -479,6 +513,116 @@ class FamilyController extends Controller
 
             return response()->json($data, 200);
         }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        // Search in the 'families' table
+        $families = Family::where('head_first_name', 'LIKE', "%$query%")
+            ->orWhere('head_middle_name', 'LIKE', "%$query%")
+            ->orWhere('head_last_name', 'LIKE', "%$query%")
+            ->get();
+
+        // Search in the 'family_members' table
+        $familyMembers = FamilyMember::where('first_name', 'LIKE', "%$query%")
+            ->orWhere('middle_name', 'LIKE', "%$query%")
+            ->orWhere('last_name', 'LIKE', "%$query%")
+            ->get();
+
+        return response()->json([
+            'families' => $families,
+            'familyMembers' => $familyMembers
+        ]);
+    }
+
+    public function show(Request $request)
+    {
+        $keyword = $request->input('keyword'); 
+    
+        $membersQuery = DB::table('family_members')
+            ->whereNull('family_members.deleted_at')
+            ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
+            ->select(
+                'family_members.id',
+                'family_members.first_name',
+                'family_members.middle_name',
+                'family_members.last_name',
+                'family_members.dob',
+                'family_members.mobile_number',
+                'family_members.relationship_with_head',
+                'fa.head_first_name',
+                'fa.head_middle_name',
+                'fa.head_last_name',
+                'fa.head_mobile_number'
+            );
+    
+        if ($keyword) {
+            $membersQuery->where(function ($query) use ($keyword) {
+                $query->where('family_members.first_name', 'like', "%$keyword%")
+                    ->orWhere('family_members.middle_name', 'like', "%$keyword%")
+                    ->orWhere('family_members.last_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_first_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_middle_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_last_name', 'like', "%$keyword%")
+                    ->orWhere(function ($subQuery) use ($keyword) {
+                        $subQuery->where('family_members.first_name', 'like', "%$keyword%")
+                            ->where('family_members.middle_name', 'like', "%$keyword%")
+                            ->where('family_members.last_name', 'like', "%$keyword%");
+                    });
+            });
+        }
+    
+        $members = $membersQuery->get();
+
+        $totalGroup = count($members);
+        $perPage = 15;
+        $page = Paginator::resolveCurrentPage('page');
+    
+        $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => 'page',
+        ]);
+
+        $u1 = json_encode($members,true);
+        $u2 = json_decode($u1,true);
+
+        $current_page = $u2['current_page'];
+        $first_page_url = $u2['first_page_url'];
+        $from = $u2['from'];
+        $last_page = $u2['last_page'];
+        $last_page_url = $u2['last_page_url'];
+        $links = $u2['links'];
+        $next_page_url = $u2['next_page_url'];
+        $path = $u2['path'];
+        $per_page = $u2['per_page'];
+        $prev_page_url = $u2['prev_page_url'];
+        $to = $u2['to'];
+        $total = $u2['total'];
+
+        $u3 = json_encode($u2['data'],true);
+        $u4 = json_decode($u3,true);
+       
+        
+        $data['current_page'] = $current_page;
+        $data['data'] = $u4;
+        $data['first_page_url'] = $first_page_url;
+        $data['from'] = $from;
+        $data['last_page'] = $last_page;
+        $data['last_page_url'] = $last_page_url;
+        $data['links'] = $links;
+        $data['next_page_url'] = $next_page_url;
+        $data['path'] = $path;
+        $data['per_page'] = $per_page;
+        $data['prev_page_url'] = $prev_page_url;
+        $data['to'] = $to;
+        $data['total'] = $total;
+       
+        $mdata['status'] = "Success"; 
+        $mdata['data'] = $data; 
+
+        return response()->json($mdata, 200);
+    }
 
 }
  
