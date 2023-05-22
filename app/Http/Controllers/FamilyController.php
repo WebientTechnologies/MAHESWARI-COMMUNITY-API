@@ -536,37 +536,92 @@ class FamilyController extends Controller
         ]);
     }
 
-    public function show()
+    public function show(Request $request)
     {
-        $families = Family::with('members')->get();
-
-    $result = [];
-
-    foreach ($families as $family) {
-        $head = [
-            'head_first_name' => $family->head_first_name,
-            'head_middle_name' => $family->head_middle_name,
-            'head_last_name' => $family->head_last_name,
-            'head_mobile_number' => $family->head_mobile_number,
-        ];
-
-        $members = $family->members->map(function ($member) {
-            return [
-                'first_name' => $member->first_name,
-                'middle_name' => $member->middle_name,
-                'last_name' => $member->last_name,
-                'dob' => $member->dob,
-                'relationship_with_head' => $member->relationship_with_head,
-            ];
-        });
-
-        $result[] = [
-            'head' => $head,
-            'members' => $members,
-        ];
+        $keyword = $request->input('keyword'); 
+    
+        $membersQuery = DB::table('family_members')
+            ->whereNull('family_members.deleted_at')
+            ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
+            ->select(
+                'family_members.id',
+                'family_members.first_name',
+                'family_members.middle_name',
+                'family_members.last_name',
+                'family_members.dob',
+                'family_members.mobile_number',
+                'family_members.relationship_with_head',
+                'fa.head_first_name',
+                'fa.head_middle_name',
+                'fa.head_last_name',
+                'fa.head_mobile_number'
+            );
+    
+        if ($keyword) {
+            $membersQuery->where(function ($query) use ($keyword) {
+                $query->where('family_members.first_name', 'like', "%$keyword%")
+                    ->orWhere('family_members.middle_name', 'like', "%$keyword%")
+                    ->orWhere('family_members.last_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_first_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_middle_name', 'like', "%$keyword%")
+                    ->orWhere('fa.head_last_name', 'like', "%$keyword%")
+                    ->orWhere(function ($subQuery) use ($keyword) {
+                        $subQuery->where('family_members.first_name', 'like', "%$keyword%")
+                            ->where('family_members.middle_name', 'like', "%$keyword%")
+                            ->where('family_members.last_name', 'like', "%$keyword%");
+                    });
+            });
         }
+    
+        $members = $membersQuery->get();
 
-        return response()->json($result);
+        $totalGroup = count($members);
+        $perPage = 15;
+        $page = Paginator::resolveCurrentPage('page');
+    
+        $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => 'page',
+        ]);
+
+        $u1 = json_encode($members,true);
+        $u2 = json_decode($u1,true);
+
+        $current_page = $u2['current_page'];
+        $first_page_url = $u2['first_page_url'];
+        $from = $u2['from'];
+        $last_page = $u2['last_page'];
+        $last_page_url = $u2['last_page_url'];
+        $links = $u2['links'];
+        $next_page_url = $u2['next_page_url'];
+        $path = $u2['path'];
+        $per_page = $u2['per_page'];
+        $prev_page_url = $u2['prev_page_url'];
+        $to = $u2['to'];
+        $total = $u2['total'];
+
+        $u3 = json_encode($u2['data'],true);
+        $u4 = json_decode($u3,true);
+       
+        
+        $data['current_page'] = $current_page;
+        $data['data'] = $u4;
+        $data['first_page_url'] = $first_page_url;
+        $data['from'] = $from;
+        $data['last_page'] = $last_page;
+        $data['last_page_url'] = $last_page_url;
+        $data['links'] = $links;
+        $data['next_page_url'] = $next_page_url;
+        $data['path'] = $path;
+        $data['per_page'] = $per_page;
+        $data['prev_page_url'] = $prev_page_url;
+        $data['to'] = $to;
+        $data['total'] = $total;
+       
+        $mdata['status'] = "Success"; 
+        $mdata['data'] = $data; 
+
+        return response()->json($mdata, 200);
     }
 
 }
