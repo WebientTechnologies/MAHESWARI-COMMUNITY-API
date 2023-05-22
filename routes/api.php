@@ -81,6 +81,7 @@ Route::group([
 
     //Category Route//
     Route::get('/all-category', [CategoryController::class, 'index']);
+    Route::get('/category-with-subcategory', [CategoryController::class, 'getCategoryWithSubcategory']);
     Route::get('/get-category-by-id/{id}', [CategoryController::class, 'show']);
     Route::post('/create-category', [CategoryController::class, 'store']);
     Route::put('/update-category', [CategoryController::class, 'edit']);
