@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use App\Models\Business;
 use App\Models\FamilyMember;
 use App\Models\Family;
@@ -11,58 +13,115 @@ use DB;
 
 class BusinessController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $data = [];
         try {
-            $businesses = DB::table('businesses')
-                ->where('businesses.deleted_at', null)
+            $businessName = $request->input('business_name'); // Get the business name from the request
+            $subcategoryIds = $request->input('subcategory_ids'); // Get the subcategory IDs from the request as an array
+    
+            $businessesQuery = DB::table('businesses')
+                ->whereNull('businesses.deleted_at')
                 ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
                 ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
-                ->orderBy('id', 'DESC')
-                ->get([
-                    'businesses.id',
-                    'businesses.business_name',
-                    'businesses.owner_name',
-                    'cat.id AS category_id',
-                    'cat.name AS category_name',
-                    'subcat.id AS subcategory_id',
-                    'subcat.name AS subcategory_name',
-                    'businesses.subcategory_id',
-                    'businesses.address',
-                    'businesses.contact_number',
-                    'businesses.created_at',
-                    'businesses.updated_at',
-                    'businesses.deleted_at',
-                ]);
-
-            $data['status'] = "Success";
-            $data['data'] =  $businesses;
-
-            // foreach ($businesses as $business) {
-            //     $subcatIds = $business->subcategory_id;
-            //     $subcatIds = json_decode($subcatIds, true);
-            //     $subcategories = [];
-
-            //     foreach ($subcatIds as $subcatId) {
-            //         $subcategory = DB::table('subcategories')
-            //             ->where('subcategories.id', $subcatId)
-            //             ->get(['subcategories.id', 'subcategories.name']);
-
-            //         $subcategories[] = $subcategory;
-            //     }
-
-            //     $business->sub_category = $subcategories;
-            //     $data['data'][] = $business;
-            // }
-
-            return response()->json($data, 200);
+                ->orderBy('id', 'DESC');
+    
+                if ($businessName) {
+                    $businessesQuery->where('businesses.business_name', 'like', "%$businessName%");
+                }
+        
+                if (!empty($subcategoryIds)) {
+                    $businessesQuery->whereIn('businesses.subcategory_id', $subcategoryIds);
+                }
+        
+    
+            $businesses = $businessesQuery->get([
+                'businesses.id',
+                'businesses.business_name',
+                'businesses.owner_name',
+                'businesses.owner_id',
+                'cat.id AS category_id',
+                'cat.name AS category_name',
+                'subcat.id AS subcategory_id',
+                'subcat.name AS subcategory_name',
+                'businesses.subcategory_id',
+                'businesses.address',
+                'businesses.file',
+                'businesses.contact_number',
+                'businesses.created_at',
+                'businesses.updated_at',
+                'businesses.deleted_at',
+            ]);
+    
+            $media = [];
+            foreach ($businesses as $business) {
+                if (!empty($business->file)) {
+                    $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($business->file, now()->addMinutes(10));
+                    $media[] = ["file" => $temporarySignedUrl];
+                } else {
+                    $media[] = ["file" => null];
+                }
+            }
+    
+            $mergedBusiness = collect($businesses)->map(function ($item, $key) use ($media) {
+                $item->media = $media[$key];
+                return $item;
+            });
+    
+            $totalGroup = count($mergedBusiness);
+            $perPage = 15;
+            $page = Paginator::resolveCurrentPage('page');
+        
+            $mergedBusiness = new LengthAwarePaginator($mergedBusiness->forPage($page, $perPage), $totalGroup, $perPage, $page, [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]);
+    
+            $u1 = json_encode($mergedBusiness,true);
+            $u2 = json_decode($u1,true);
+    
+            $current_page = $u2['current_page'];
+            $first_page_url = $u2['first_page_url'];
+            $from = $u2['from'];
+            $last_page = $u2['last_page'];
+            $last_page_url = $u2['last_page_url'];
+            $links = $u2['links'];
+            $next_page_url = $u2['next_page_url'];
+            $path = $u2['path'];
+            $per_page = $u2['per_page'];
+            $prev_page_url = $u2['prev_page_url'];
+            $to = $u2['to'];
+            $total = $u2['total'];
+    
+            $u3 = json_encode($u2['data'],true);
+            $u4 = json_decode($u3,true);
+           
+            
+            $data['current_page'] = $current_page;
+            $data['data'] = $u4;
+            $data['first_page_url'] = $first_page_url;
+            $data['from'] = $from;
+            $data['last_page'] = $last_page;
+            $data['last_page_url'] = $last_page_url;
+            $data['links'] = $links;
+            $data['next_page_url'] = $next_page_url;
+            $data['path'] = $path;
+            $data['per_page'] = $per_page;
+            $data['prev_page_url'] = $prev_page_url;
+            $data['to'] = $to;
+            $data['total'] = $total;
+           
+            $mdata['status'] = "Success"; 
+            $mdata['data'] = $data; 
+    
+            return response()->json($mdata, 200);
         } catch (Exception $e) {
             $data['status'] = "Error";
             $data['message'] = $e->getMessage();
             return response()->json($data, 500);
         }
     }
+
 public function getBusinessForFamily(Request $request){
 
     $data =[];
