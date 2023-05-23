@@ -69,7 +69,7 @@ Route::group([
     Route::get('/get-request/{id}', [FamilyController::class, 'getMyRequest']);
     Route::post('/approved-request/{requestId}', [FamilyController::class, 'approve']);   
     Route::get('/get-profile/{id}/{role}', [FamilyController::class, 'profile']);
-    Route::get('/search', [FamilyController::class, 'search']);
+    Route::get('/last-name', [FamilyController::class, 'searchLastName']);
     Route::post('/family-directory', [FamilyController::class, 'familyDirectory']);
 
     //Family Member Route//
@@ -81,6 +81,7 @@ Route::group([
 
     //Category Route//
     Route::get('/all-category', [CategoryController::class, 'index']);
+    Route::get('/category-with-subcategory', [CategoryController::class, 'getCategoryWithSubcategory']);
     Route::get('/get-category-by-id/{id}', [CategoryController::class, 'show']);
     Route::post('/create-category', [CategoryController::class, 'store']);
     Route::put('/update-category', [CategoryController::class, 'edit']);

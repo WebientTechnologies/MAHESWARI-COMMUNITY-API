@@ -514,26 +514,14 @@ class FamilyController extends Controller
             return response()->json($data, 200);
         }
 
-    public function search(Request $request)
+    public function searchLastName(Request $request)
     {
         $query = $request->input('query');
 
-        // Search in the 'families' table
-        $families = Family::where('head_first_name', 'LIKE', "%$query%")
-            ->orWhere('head_middle_name', 'LIKE', "%$query%")
-            ->orWhere('head_last_name', 'LIKE', "%$query%")
-            ->get();
+        $families = Family::where('head_last_name', 'LIKE', "%$query%")
+            ->get(['head_last_name']);
 
-        // Search in the 'family_members' table
-        $familyMembers = FamilyMember::where('first_name', 'LIKE', "%$query%")
-            ->orWhere('middle_name', 'LIKE', "%$query%")
-            ->orWhere('last_name', 'LIKE', "%$query%")
-            ->get();
-
-        return response()->json([
-            'families' => $families,
-            'familyMembers' => $familyMembers
-        ]);
+        return response()->json($families, 200);
     }
 
     public function familyDirectory(Request $request)
@@ -573,7 +561,7 @@ class FamilyController extends Controller
                 $membersQuery->where('family_members.last_name', '=', $lastName)
                 ->orWhere('fa.head_last_name', '=', $lastName);
             }
-
+    
             
     
         $members = $membersQuery->get();
