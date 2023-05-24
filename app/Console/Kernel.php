@@ -15,16 +15,16 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         // ...
-        \App\Console\Commands\UpdateOrderLock::class,
+        \App\Console\Commands\DeleteExpiredNews::class,
         \App\Console\Commands\SendBirthdayWishes::class,
     ];
 
     
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('orders:update-order-lock')
-             ->everyMinute();
+        
         $schedule->command('send:birthday-wishes')->daily();
+        $schedule->command('news:delete-expired')->daily();
 
     }
 

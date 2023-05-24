@@ -16,6 +16,11 @@ use App\Http\Controllers\BirthdayWishController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\WishController;
+use App\Http\Controllers\DegreeController;
+use App\Http\Controllers\QualificationController;
+use App\Http\Controllers\MaritalStatusController;
+use App\Http\Controllers\OccupationController;
+use App\Http\Controllers\RelationshipController;
 
 
 
@@ -111,13 +116,33 @@ Route::group([
     Route::post('/send-birthday-wish', [BirthdayWishController::class, 'send']);
 
     //Business Route//
-    Route::get('/get-business', [BusinessController::class, 'index']);
+    Route::post('/get-business', [BusinessController::class, 'index']);
     Route::get('/get-business-by-family', [BusinessController::class, 'getBusinessForFamily']);
 
     Route::get('/get-business-by-id/{id}', [BusinessController::class, 'show']);
     Route::post('/create-business', [BusinessController::class, 'store']);
     Route::post('/update-business', [BusinessController::class, 'edit']);
     Route::delete('/delete-business/{id}', [BusinessController::class, 'destroy']);
+
+    //Degree Routes//
+    Route::get('/get-degree', [DegreeController::class, 'index']);
+    Route::post('/create-degree', [DegreeController::class, 'store']);
+
+    //qualification//
+    Route::get('/get-qualification', [QualificationController::class, 'index']);
+    Route::post('/create-qualification', [QualificationController::class, 'store']);
+
+    //marital status//
+    Route::get('/get-marital', [MaritalStatusController::class, 'index']);
+    Route::post('/create-marital', [MaritalStatusController::class, 'store']);
+
+    //occupation//
+    Route::get('/get-occupation', [OccupationController::class, 'index']);
+    Route::post('/create-occupation', [OccupationController::class, 'store']);
+
+    //relation//
+    Route::get('/get-relation', [RelationshipController::class, 'index']);
+    Route::post('/create-relation', [RelationshipController::class, 'store']);
 
 });
 

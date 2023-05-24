@@ -526,13 +526,15 @@ class FamilyController extends Controller
 
     public function familyDirectory(Request $request)
     {
-        $firstName = $request->input('first_name'); 
-        $middleName = $request->input('middle_name'); 
-        $lastName = $request->input('last_name');  
-    
+        $firstName = $request->input('first_name');
+        $middleName = $request->input('middle_name');
+        $lastName = $request->input('last_name');
         $membersQuery = DB::table('family_members')
             ->whereNull('family_members.deleted_at')
             ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
+            ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
+            ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
+            ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
             ->select(
                 'family_members.id',
                 'family_members.first_name',
@@ -546,22 +548,6 @@ class FamilyController extends Controller
                 'fa.head_last_name',
                 'fa.head_mobile_number'
             );
-    
-            if ($firstName) {
-                $membersQuery->where('family_members.first_name', '=', $firstName)
-                ->orWhere('fa.head_first_name', '=', $firstName);
-            }
-        
-            if ($middleName) {
-                $membersQuery->where('family_members.middle_name', '=', $middleName)
-                ->orWhere('fa.head_middle_name', '=', $middleName);
-            }
-        
-            if ($lastName) {
-                $membersQuery->where('family_members.last_name', '=', $lastName)
-                ->orWhere('fa.head_last_name', '=', $lastName);
-            }
-    
             
     
         $members = $membersQuery->get();
