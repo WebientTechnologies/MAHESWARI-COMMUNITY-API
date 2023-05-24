@@ -13,12 +13,13 @@ use DB;
 
 class BusinessController extends Controller
 {
+
     public function index(Request $request)
     {
         $data = [];
         try {
-            $businessName = $request->input('business_name'); // Get the business name from the request
-            $subcategoryIds = $request->input('subcategory_ids'); // Get the subcategory IDs from the request as an array
+            $businessName = $request->business_name; // Get the business name from the request
+            $subcategoryIds = $request->subcategory_ids; // Get the subcategory IDs from the request as an array
     
             $businessesQuery = DB::table('businesses')
                 ->whereNull('businesses.deleted_at')
@@ -27,11 +28,11 @@ class BusinessController extends Controller
                 ->orderBy('id', 'DESC');
     
                 if ($businessName) {
-                    $businessesQuery->where('businesses.business_name', 'like', "%$businessName%");
+                    $businessesQuery->where('businesses.business_name', 'like', '%'.$businessName.'%');
                 }
         
                 if (!empty($subcategoryIds)) {
-                    $businessesQuery->whereIn('businesses.subcategory_id', $subcategoryIds);
+                    $businessesQuery->whereIn('businesses.subcategory_id', explode(',',$subcategoryIds));
                 }
         
     
