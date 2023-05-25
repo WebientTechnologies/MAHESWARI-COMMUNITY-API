@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\FamilyMember;
 
+use Illuminate\Support\Facades\Http;
 use App\Models\Family;
 use App\Models\Request as ChangeRequest;
 use Carbon\Carbon;
@@ -18,13 +19,22 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Mail\VerifyEmail;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Storage;
 
 class FamilyMemberController extends Controller
 {
     public function update(Request $request, $id, $role)
     {
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filename = time().'.'.$image->getClientOriginalExtension();
+            Storage::disk('s3')->put($filename, file_get_contents($image));
+            
+        }
         if($role == 'family_member'){
             $member = FamilyMember::where('id', $id)->first();
+
+            $head = Family::where('id', $member->family_id)->first();
 
             if($request->has('first_name')){
                 $newValue = $request->first_name;  
@@ -39,6 +49,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for First Name',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
             if($request->has('middle_name')){
                 $newValue = $request->middle_name;
@@ -53,6 +70,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Middle Name',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
             if($request->has('last_name')){
                 $newValue = $request->last_name;
@@ -67,6 +91,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Last Name',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
             if($request->has('occupation')){
                 $newValue = $request->occupation;
@@ -81,6 +112,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Occupation',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
             if($request->has('dob')){
                 $newValue = $request->dob;
@@ -95,6 +133,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for dob',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             if($request->has('mobile_number')){
@@ -110,6 +155,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Mobile Number',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             if($request->has('relationship_with_head')){
@@ -122,9 +174,16 @@ class FamilyMemberController extends Controller
                 $request->old_value = $oldValue;
                 $request->new_value = $newValue;
                 $request->member_id = $id;
-                $changeRequest->head_id = $member->family_id;
+                $request->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Relation',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             if($request->has('address')){
@@ -137,9 +196,16 @@ class FamilyMemberController extends Controller
                 $request->old_value = $oldValue;
                 $request->new_value = $newValue;
                 $request->member_id = $id;
-                $changeRequest->head_id = $member->family_id;
+                $request->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Address',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             if($request->has('qualification')){
@@ -152,9 +218,16 @@ class FamilyMemberController extends Controller
                 $request->old_value = $oldValue;
                 $request->new_value = $newValue;
                 $request->member_id = $id;
-                $changeRequest->head_id = $member->family_id;
+                $request->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Qualification',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
             if($request->has('marital_status')){
                 $newValue = $request->marital_status;
@@ -166,9 +239,16 @@ class FamilyMemberController extends Controller
                 $request->old_value = $oldValue;
                 $request->new_value = $newValue;
                 $request->member_id = $id;
-                $changeRequest->head_id = $member->family_id;
+                $request->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Marital Status',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             if($request->has('degree')){
@@ -184,6 +264,13 @@ class FamilyMemberController extends Controller
                 $changeRequest->head_id = $member->family_id;
                 $request->status= 'pending';
                 $request->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => 'change for Degree',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
             }
 
             return response()->json(['message' => 'Request saved successfully']);
@@ -202,6 +289,10 @@ class FamilyMemberController extends Controller
             $family->relationship_with_head = $request->input('relationship_with_head');
             $family->qualification = $request->input('qualification');
             $family->degree = $request->input('degree');
+            $family->degree = $request->input('degree');
+            $family->gender = $request->input('gender');
+            $family->date_of_anniversary = $request->input('date_of_anniversary');
+            $family->image = $filename;
             $family->save();
 
             return response()->json(['message' => 'Record Updated successfully']);

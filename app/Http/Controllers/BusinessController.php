@@ -9,6 +9,7 @@ use App\Models\Family;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Request as ChangeRequest;
 use DB;
 
 class BusinessController extends Controller
@@ -299,7 +300,24 @@ public function getBusinessForFamily(Request $request){
                 }
                 
             }
-            
+
+            $role = $request->role;
+            $imageApproved = 1;
+            if($role == 'family_member'){
+                $imageApproved = 0;
+
+                $member = FamilyMember::where('id', $params['owner_id'])->first();
+                $request = new ChangeRequest;
+
+                $request->column_name = 'Business Image';
+                $request->old_value = 'blank Image';
+                $request->new_value = $name;
+                $request->member_id = $params['owner_id'];
+                $request->head_id = $member->family_id;
+                $request->status= 'pending';
+                $request->save();
+            }
+            // print_r($imageApproved);exit;
             $business = new Business();
             $business->business_name = $params['business_name'];
             $business->owner_name = $params['owner_name'];
@@ -309,6 +327,7 @@ public function getBusinessForFamily(Request $request){
             $business->subcategory_id = $request->subcategory_id; 
             $business->address = $request->address;
             $business->contact_number = $request->contact_number;
+            $business->is_image_approved = $imageApproved;
             $business->save();
             
 
