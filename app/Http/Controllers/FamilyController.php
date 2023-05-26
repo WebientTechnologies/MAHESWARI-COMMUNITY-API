@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\Family;
 use App\Models\FamilyMember;
+use App\Models\Business;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use App\Models\Request as ChangeRequest;
+use Illuminate\Support\Facades\Storage;
 
 class FamilyController extends Controller
 {
@@ -159,6 +161,13 @@ class FamilyController extends Controller
         try {
             $role = $request->role;
 
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $filename = time().'.'.$image->getClientOriginalExtension();
+                Storage::disk('s3')->put($filename, file_get_contents($image));
+                
+            }
+
             if($role == 'family_head'){
                 $family = Family::findOrFail($id);
                 $family->head_first_name = $request->input('first_name');
@@ -172,6 +181,9 @@ class FamilyController extends Controller
                 $family->relationship_with_head = $request->input('relationship_with_head');
                 $family->qualification = $request->input('qualification');
                 $family->degree = $request->input('degree');
+                $family->gender = $request->input('gender');
+                $family->date_of_anniversary = $request->input('date_of_anniversary');
+                $family->image = $filename;
                 $family->save();
 
             }
@@ -189,6 +201,9 @@ class FamilyController extends Controller
                 $family->relationship_with_head = $request->input('relationship_with_head');
                 $family->qualification = $request->input('qualification');
                 $family->degree = $request->input('degree');
+                $family->gender = $request->input('gender');
+                $family->date_of_anniversary = $request->input('date_of_anniversary');
+                $family->image = $filename;
                 $family->save();
 
             }
@@ -226,6 +241,9 @@ class FamilyController extends Controller
                 'family_members.degree',
                 'family_members.occupation',
                 'family_members.marital_status',
+                'family_members.gender',
+                'family_members.date_of_anniversary',
+                'family_members.image',
                 ]);
  
                 $head = DB::table('families')
@@ -241,15 +259,34 @@ class FamilyController extends Controller
                 'families.relationship_with_head',
                 'families.qualification',
                 'families.degree',
+                'families.gender',
+                'families.date_of_anniversary',
+                'families.image',
                 'families.head_occupation AS occupation',
                 'families.marital_status',
                 ]);
             
            
                 $members = $members->merge($head);
+
+                $media = [];
+                foreach ($members as $member) {
+                    if ($member->image) {
+                        $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($member->image, now()->addMinutes(10));
+                        $media[] = ["image" => $temporarySignedUrl];
+                    } else {
+                        $media[] = ["image" => null]; // Set null for members without an image
+                    }
+                }
+
+                $mergedMembers = $members->map(function ($item, $key) use ($media) {
+                    $item->media = $media[$key];
+                    return $item;
+                });
+           
                  
                 $data['status'] = "Success";
-                $data['data'] = $members;
+                $data['data'] = $mergedMembers;
                                         
             }
             if($role == 'family_member'){
@@ -271,6 +308,9 @@ class FamilyController extends Controller
                 'family_members.degree',
                 'family_members.occupation',
                 'family_members.marital_status',
+                'family_members.gender',
+                'family_members.date_of_anniversary',
+                'family_members.image',
                 ]);
             
             $head = DB::table('families')
@@ -286,15 +326,33 @@ class FamilyController extends Controller
                 'families.relationship_with_head',
                 'families.qualification',
                 'families.degree',
+                'families.gender',
+                'families.date_of_anniversary',
+                'families.image',
                 'families.head_occupation AS occupation',
                 'families.marital_status',
                 ]);
             
             
                 $members = $members->merge($head);
+                $media = [];
+                foreach ($members as $member) {
+                    if ($member->image) {
+                        $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($member->image, now()->addMinutes(10));
+                        $media[] = ["image" => $temporarySignedUrl];
+                    } else {
+                        $media[] = ["image" => null]; // Set null for members without an image
+                    }
+                }
+
+                $mergedMembers = $members->map(function ($item, $key) use ($media) {
+                    $item->media = $media[$key];
+                    return $item;
+                });
+           
                  
                 $data['status'] = "Success";
-                $data['data'] = $members;
+                $data['data'] = $mergedMembers;
             }
             return response()->json($data, 200);
         } catch (Exception $e){
@@ -327,6 +385,13 @@ class FamilyController extends Controller
                     return response()->json($data, $status);
                     exit;
                 }
+
+                if ($request->hasFile('image')) {
+                    $image = $request->file('image');
+                    $filename = time().'.'.$image->getClientOriginalExtension();
+                    Storage::disk('s3')->put($filename, file_get_contents($image));
+                    
+                }
                     $family->first_name = $request->input('first_name');
                     $family->middle_name = $request->input('middle_name');
                     $family->last_name = $request->input('last_name');
@@ -338,6 +403,9 @@ class FamilyController extends Controller
                     $family->relationship_with_head = $request->input('relationship_with_head');
                     $family->qualification = $request->input('qualification');
                     $family->degree = $request->input('degree');
+                    $family->gender = $request->input('gender');
+                    $family->date_of_anniversary = $request->input('date_of_anniversary');
+                    $family->image = $filename;
                     $family->save();
                 
                 $data['status'] = "Success";
@@ -375,6 +443,13 @@ class FamilyController extends Controller
                     exit;
                 }
 
+                if ($request->hasFile('image')) {
+                    $image = $request->file('image');
+                    $filename = time().'.'.$image->getClientOriginalExtension();
+                    Storage::disk('s3')->put($filename, file_get_contents($image));
+                    
+                }
+
                 $family = new FamilyMember;
                 $family->family_id = $familyId;
                 $family->first_name = $request->input('first_name');
@@ -388,6 +463,9 @@ class FamilyController extends Controller
                 $family->relationship_with_head = $request->input('relationship_with_head');
                 $family->qualification = $request->input('qualification');
                 $family->degree = $request->input('degree');
+                $family->gender = $request->input('gender');
+                $family->date_of_anniversary = $request->input('date_of_anniversary');
+                $family->image = $filename;
                 $family->save();
                 
                 $data['status'] = "Success";
@@ -452,6 +530,17 @@ class FamilyController extends Controller
         if($status == 'approved'){
             return response()->json(['message' => 'request already Approved']);
             exit;
+        }
+        if($column == 'Business Image'){
+            $business = Business::where('owner_id', $memberId)->where('file', $newValue)->first();
+            //print_r($business->is_image_approved);exit;
+            if($request->status == 'approved'){
+                $business->is_image_approved = 1;
+            }
+            if($request->status == 'rejected'){
+                $business->is_image_approved = 0;
+            }
+            $business->save();
         }
         $member = FamilyMember::findOrFail($memberId);
         if($column == "first_name"){
@@ -529,12 +618,24 @@ class FamilyController extends Controller
         $firstName = $request->input('first_name');
         $middleName = $request->input('middle_name');
         $lastName = $request->input('last_name');
+    	//$gender = $request->input('gender');
+    	$marital = $request->input('marital');
+    	$relationship = $request->input('relation');
+    	$qualification = $request->input('qualification');
+    	$degree = $request->input('degree');
+    	$occupation = $request->input('occupation');
         $membersQuery = DB::table('family_members')
             ->whereNull('family_members.deleted_at')
             ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
             ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
             ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
             ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
+    	    //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
+    	    ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
+    	    ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
+    	    ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
+    	    ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
+    	    ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
             ->select(
                 'family_members.id',
                 'family_members.first_name',
