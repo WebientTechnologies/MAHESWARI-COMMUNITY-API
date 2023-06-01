@@ -509,6 +509,12 @@ class FamilyController extends Controller
             'requests.updated_at',
             'requests.deleted_at',
             ]);
+
+            foreach ($requests as $request) {
+                if ($request->column_name === 'Business Image') {
+                    $request->new_value = Storage::disk('s3')->temporaryUrl($request->new_value, now()->addMinutes(10));
+                }
+            }
              
             $data['status'] = "Success";
             $data['data'] = $requests;
