@@ -514,7 +514,7 @@ class FamilyController extends Controller
                 if ($request->column_name === 'Business Image') {
                     $request->new_value = Storage::disk('s3')->temporaryUrl($request->new_value, now()->addMinutes(10));
                 }
-            }
+            }  
              
             $data['status'] = "Success";
             $data['data'] = $requests;
@@ -609,104 +609,116 @@ class FamilyController extends Controller
             return response()->json($data, 200);
         }
 
-    public function searchLastName(Request $request)
-    {
-        $query = $request->input('query');
-
-        $families = Family::where('head_last_name', 'LIKE', "%$query%")
-            ->get(['head_last_name']);
-
-        return response()->json($families, 200);
-    }
-
-    public function familyDirectory(Request $request)
-    {
-        $firstName = $request->input('first_name');
-        $middleName = $request->input('middle_name');
-        $lastName = $request->input('last_name');
-    	//$gender = $request->input('gender');
-    	$marital = $request->input('marital');
-    	$relationship = $request->input('relation');
-    	$qualification = $request->input('qualification');
-    	$degree = $request->input('degree');
-    	$occupation = $request->input('occupation');
-        $membersQuery = DB::table('family_members')
-            ->whereNull('family_members.deleted_at')
-            ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
-            ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
-            ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
-            ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
-    	    //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
-    	    ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
-    	    ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
-    	    ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
-    	    ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
-    	    ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
-            ->select(
-                'family_members.id',
-                'family_members.first_name',
-                'family_members.middle_name',
-                'family_members.last_name',
-                'family_members.dob',
-                'family_members.mobile_number',
-                'family_members.relationship_with_head',
-                'fa.head_first_name',
-                'fa.head_middle_name',
-                'fa.head_last_name',
-                'fa.head_mobile_number'
-            );
-            
+        public function searchLastName(Request $request)
+        {
+            $query = $request->input('query');
     
-        $members = $membersQuery->get();
-
-        $totalGroup = count($members);
-        $perPage = 15;
-        $page = Paginator::resolveCurrentPage('page');
+            $families = Family::where('head_last_name', 'LIKE', '%'.$query.'%')
+            ->distinct()
+                ->get(['head_last_name']);
     
-        $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
-            'pageName' => 'page',
-        ]);
+            return response()->json($families, 200);
+        }
 
-        $u1 = json_encode($members,true);
-        $u2 = json_decode($u1,true);
-
-        $current_page = $u2['current_page'];
-        $first_page_url = $u2['first_page_url'];
-        $from = $u2['from'];
-        $last_page = $u2['last_page'];
-        $last_page_url = $u2['last_page_url'];
-        $links = $u2['links'];
-        $next_page_url = $u2['next_page_url'];
-        $path = $u2['path'];
-        $per_page = $u2['per_page'];
-        $prev_page_url = $u2['prev_page_url'];
-        $to = $u2['to'];
-        $total = $u2['total'];
-
-        $u3 = json_encode($u2['data'],true);
-        $u4 = json_decode($u3,true);
-       
+        public function familyDirectory(Request $request)
+        {
+            $firstName = $request->input('first_name');
+            $middleName = $request->input('middle_name');
+            $lastName = $request->input('last_name');
+            //$gender = $request->input('gender');
+            $marital = $request->input('marital');
+            $relationship = $request->input('relation');
+            $qualification = $request->input('qualification');
+            $degree = $request->input('degree');
+            $occupation = $request->input('occupation');
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+            $membersQuery = DB::table('family_members')
+                ->whereNull('family_members.deleted_at')
+                ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
+                ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
+                //->orWhere('family_members.first_name', 'LIKE', 'null')
+                ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
+                //->orWhere('family_members.middle_name', 'LIKE', 'null')
+                ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
+                //->orWhere('family_members.last_name', 'LIKE', 'null')
+                //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
+                ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
+                ->orWhere('family_members.marital_status', 'LIKE', 'null')
+            ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
+                //->orWhere('family_members.relationship_with_head', 'LIKE', 'null')
+                ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
+                //->orWhere('family_members.qualification', 'LIKE', 'null')
+                ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
+                //->orWhere('family_members.degree', 'LIKE', 'null')
+                ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
+                //->orWhere('family_members.occupation', 'LIKE', 'null')
+            ->whereBetween('family_members.dob',[$start_date,$end_date])
+                ->select(
+                    'family_members.id',
+                    'family_members.first_name',
+                    'family_members.middle_name',
+                    'family_members.last_name',
+                    'family_members.dob',
+                    'family_members.mobile_number',
+                    'family_members.relationship_with_head',
+                    'fa.head_first_name',
+                    'fa.head_middle_name',
+                    'fa.head_last_name',
+                    'fa.head_mobile_number'
+                );
+                
         
-        $data['current_page'] = $current_page;
-        $data['data'] = $u4;
-        $data['first_page_url'] = $first_page_url;
-        $data['from'] = $from;
-        $data['last_page'] = $last_page;
-        $data['last_page_url'] = $last_page_url;
-        $data['links'] = $links;
-        $data['next_page_url'] = $next_page_url;
-        $data['path'] = $path;
-        $data['per_page'] = $per_page;
-        $data['prev_page_url'] = $prev_page_url;
-        $data['to'] = $to;
-        $data['total'] = $total;
-       
-        $mdata['status'] = "Success"; 
-        $mdata['data'] = $data; 
-
-        return response()->json($mdata, 200);
-    }
+            $members = $membersQuery->get();
+    
+            $totalGroup = count($members);
+            $perPage = 2000;
+            $page = Paginator::resolveCurrentPage('page');
+        
+            $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]);
+    
+            $u1 = json_encode($members,true);
+            $u2 = json_decode($u1,true);
+    
+            $current_page = $u2['current_page'];
+            $first_page_url = $u2['first_page_url'];
+            $from = $u2['from'];
+            $last_page = $u2['last_page'];
+            $last_page_url = $u2['last_page_url'];
+            $links = $u2['links'];
+            $next_page_url = $u2['next_page_url'];
+            $path = $u2['path'];
+            $per_page = $u2['per_page'];
+            $prev_page_url = $u2['prev_page_url'];
+            $to = $u2['to'];
+            $total = $u2['total'];
+    
+            $u3 = json_encode($u2['data'],true);
+            $u4 = json_decode($u3,true);
+           
+            
+            $data['current_page'] = $current_page;
+            $data['data'] = $u4;
+            $data['first_page_url'] = $first_page_url;
+            $data['from'] = $from;
+            $data['last_page'] = $last_page;
+            $data['last_page_url'] = $last_page_url;
+            $data['links'] = $links;
+            $data['next_page_url'] = $next_page_url;
+            $data['path'] = $path;
+            $data['per_page'] = $per_page;
+            $data['prev_page_url'] = $prev_page_url;
+            $data['to'] = $to;
+            $data['total'] = $total;
+           
+            $mdata['status'] = "Success"; 
+            $mdata['data'] = $data; 
+    
+            return response()->json($mdata, 200);
+        }
 
 }
  
