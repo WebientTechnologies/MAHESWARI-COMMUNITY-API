@@ -327,9 +327,9 @@ class BusinessController extends Controller
             $business->owner_id = $params['owner_id'];
             $business->file = $name;
             $business->category_id = $params['category_id'];
-            $business->subcategory_id = $request->subcategory_id; 
-            $business->address = $request->address;
-            $business->contact_number = $request->contact_number;
+            $business->subcategory_id = $params['subcategory_id']; 
+            $business->address = $params['address'];
+            $business->contact_number = $params['contact_number'];
             $business->is_image_approved = $imageApproved;
             $business->save();
             

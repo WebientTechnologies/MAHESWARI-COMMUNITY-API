@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\Family;
 use App\Models\FamilyMember;
+use App\Models\FamilyOtp;
 use App\Models\Business;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use App\Models\Request as ChangeRequest;
 use Illuminate\Support\Facades\Storage;
+use Twilio\Rest\Client;
 
 class FamilyController extends Controller
 {
@@ -73,17 +75,18 @@ class FamilyController extends Controller
             'family_head' => auth('family_head')->user()
         ]);
     }
+    
 
-    function sendOtp(Request $request)
+    public function sendOtp(Request $request)
     {
        $data = [];
         $mobileNumber = $request->input('mobile_number');
         $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
 
         if ($familyMembers->isEmpty()) {
-            $headnumber = Family::where('head_mobile_number', $mobileNumber)->get(['head_mobile_number']);
+            $head = Family::where('head_mobile_number', $mobileNumber)->first();
            
-            if($headnumber->isEmpty()){
+            if(!$head){
                 $data['status'] = "Error";
                 $data['message'] = 'This Number is not registerd with us';
                 $status = 400;
@@ -91,71 +94,137 @@ class FamilyController extends Controller
                 exit;
             
             }else{
-                $number = $headnumber[0]['head_mobile_number'];
+                $headId = $head->id;
+                //print_r($headId);exit;
+                $userOtp = FamilyOtp::where("family_id", $headId)->latest()->first(); 
+                $now = now();
+                $finalOtp = "";
+                if($userOtp && $now->isBefore(($userOtp->expire_at))){
+                    $finalOtp =  $userOtp;
+                }
+
+                $finalOtp = FamilyOtp::create([
+                    'family_id' => $headId,
+                    'otp' => rand(123456, 999999),
+                    'expire_at' => $now->addMinutes(10),
+                ]);
+               $finalMobileNumber = '+91' . $mobileNumber;
+               $finalOtp->sendSms($finalMobileNumber);
+                // print_r($finalOtp->otp);exit;
+
                 $data['status'] = "Success";
-                $data['number'] = $number;
+                $data['message'] = "Otp Sent";
                 
             }
         }else{
             $fId = $familyMembers[0]['family_id'];
+
+            $userOtp = FamilyOtp::where("family_id", $fId)->latest()->first();
+            
+                $now = now();
+
+                if($userOtp && $now->isBefore(($userOtp->expire_at))){
+                    $finalOtp =  $userOtp;
+                }
+
+                $finalOtp = FamilyOtp::create([
+                    'family_id' => $fId,
+                    'otp' => rand(123456, 999999),
+                    'expire_at' => $now->addMinutes(10),
+                ]);
             $headnumber = Family::where('id', $fId)->get(['head_mobile_number']);
             $number = $headnumber[0]['head_mobile_number'];
+            $finalMobileNumber = '+91' . $number;
+            // print_r($finalMobileNumber);exit;
+            $finalOtp->sendSms($finalMobileNumber);
+
             $data['status'] = "Success";
-            $data['number'] = $number;
+            $data['message'] = "Otp Sent";
 
         }
-
         return response()->json($data, 200);
 
     }
+
+    // public function sendOtp(Request $request)
+    // {
+    //     $otp = mt_rand(100000, 999999); // Generate a random OTP
+
+    //     $twilioSid = 'AC5364f3cf7e2ff0a6469949b3d818d03e';
+    //     $twilioToken = '5d47bb69edd40198758886074db3dd42';
+    //     $twilioNumber = '+13613488478';
+
+    //     $client = new Client($twilioSid, $twilioToken);
+
+    //     $message = $client->messages->create(
+    //         $request->input('mobile_number'),
+    //         [
+    //             'from' => $twilioNumber,
+    //             'body' => 'Your OTP: ' . $otp,
+    //         ]
+    //     );
+
+    //     return response()->json(['message' => 'OTP sent successfully']);
+    // }
+
 
     public function login(Request $request)
     {
         $data = [];
 
-        $validator = Validator::make($request->all(), [
-            'otp' => 'required|numeric|min:6',
-        ]);
+        $userOtp = FamilyOtp::where("otp", $request->otp)->first(); 
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if($request->device_token == "" || $request->device_token == null){
+        if(!$userOtp){
             $data['status'] = "Error";
-            $data['message'] = 'Invalid Login Token';
+            $data['message'] = 'Invalid Otp';
             $status = 400;
             return response()->json($data, $status);exit;
         }
+        $now = now();
+        if($userOtp && $now->isBefore(($userOtp->expire_at))){ 
 
-        $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
-
-        if (!$familyMember) {
-            $head = Family::where('head_mobile_number', $request->mobile)->first();
-
-            if (!$head) {
+            if($request->device_token == "" || $request->device_token == null){
                 $data['status'] = "Error";
-                $data['message'] = 'Please Enter Valid Mobile Number';
+                $data['message'] = 'Invalid Login Token';
                 $status = 400;
-                return response()->json($data, $status);
-            } else {
-                $head->device_token = $request->device_token;
-                $head->save();
-                $data['status'] = "Success";
-                $data['role'] = "family_head";
-                $data['data'] = $head;
+                return response()->json($data, $status);exit;
             }
-        } else {
-            $familyMember->device_token = $request->device_token;
-            $familyMember->save();
-            $data['status'] = "Success";
-            $data['role'] = "family_member";
-            $data['data'] = $familyMember;
-        }
 
-        return response()->json($data, 200);
+            $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
+
+            if (!$familyMember) {
+                $head = Family::where('head_mobile_number', $request->mobile)->first();
+
+                if (!$head) {
+                    $data['status'] = "Error";
+                    $data['message'] = 'Please Enter Valid Mobile Number';
+                    $status = 400;
+                    return response()->json($data, $status);
+                } else {
+                    $head->device_token = $request->device_token;
+                    $head->save();
+                    $data['status'] = "Success";
+                    $data['role'] = "family_head";
+                    $data['data'] = $head;
+                }
+            } else {
+                $familyMember->device_token = $request->device_token;
+                $familyMember->save();
+                $data['status'] = "Success";
+                $data['role'] = "family_member";
+                $data['data'] = $familyMember;
+            }
+
+            return response()->json($data, 200);
+        }else{
+            $data['status'] = "Error";
+            $data['message'] = 'Otp is Expired Please Generate New';
+            $status = 400;
+            return response()->json($data, $status);exit;
+        }
     }
 
+    
     public function update(Request $request, $id)
     {
         try {
