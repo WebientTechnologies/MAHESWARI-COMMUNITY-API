@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use App\Models\Family;
 use App\Models\FamilyMember;
+use App\Models\FamilyOtp;
 use App\Models\Business;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use App\Models\Request as ChangeRequest;
 use Illuminate\Support\Facades\Storage;
+use Twilio\Rest\Client;
 
 class FamilyController extends Controller
 {
@@ -73,17 +75,18 @@ class FamilyController extends Controller
             'family_head' => auth('family_head')->user()
         ]);
     }
+    
 
-    function sendOtp(Request $request)
+    public function sendOtp(Request $request)
     {
        $data = [];
         $mobileNumber = $request->input('mobile_number');
         $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
 
         if ($familyMembers->isEmpty()) {
-            $headnumber = Family::where('head_mobile_number', $mobileNumber)->get(['head_mobile_number']);
+            $head = Family::where('head_mobile_number', $mobileNumber)->first();
            
-            if($headnumber->isEmpty()){
+            if(!$head){
                 $data['status'] = "Error";
                 $data['message'] = 'This Number is not registerd with us';
                 $status = 400;
@@ -91,71 +94,137 @@ class FamilyController extends Controller
                 exit;
             
             }else{
-                $number = $headnumber[0]['head_mobile_number'];
+                $headId = $head->id;
+                //print_r($headId);exit;
+                $userOtp = FamilyOtp::where("family_id", $headId)->latest()->first(); 
+                $now = now();
+                $finalOtp = "";
+                if($userOtp && $now->isBefore(($userOtp->expire_at))){
+                    $finalOtp =  $userOtp;
+                }
+
+                $finalOtp = FamilyOtp::create([
+                    'family_id' => $headId,
+                    'otp' => rand(123456, 999999),
+                    'expire_at' => $now->addMinutes(10),
+                ]);
+               $finalMobileNumber = '+91' . $mobileNumber;
+               $finalOtp->sendSms($finalMobileNumber);
+                // print_r($finalOtp->otp);exit;
+
                 $data['status'] = "Success";
-                $data['number'] = $number;
+                $data['message'] = "Otp Sent";
                 
             }
         }else{
             $fId = $familyMembers[0]['family_id'];
+
+            $userOtp = FamilyOtp::where("family_id", $fId)->latest()->first();
+            
+                $now = now();
+
+                if($userOtp && $now->isBefore(($userOtp->expire_at))){
+                    $finalOtp =  $userOtp;
+                }
+
+                $finalOtp = FamilyOtp::create([
+                    'family_id' => $fId,
+                    'otp' => rand(123456, 999999),
+                    'expire_at' => $now->addMinutes(10),
+                ]);
             $headnumber = Family::where('id', $fId)->get(['head_mobile_number']);
             $number = $headnumber[0]['head_mobile_number'];
+            $finalMobileNumber = '+91' . $number;
+            // print_r($finalMobileNumber);exit;
+            $finalOtp->sendSms($finalMobileNumber);
+
             $data['status'] = "Success";
-            $data['number'] = $number;
+            $data['message'] = "Otp Sent";
 
         }
-
         return response()->json($data, 200);
 
     }
+
+    // public function sendOtp(Request $request)
+    // {
+    //     $otp = mt_rand(100000, 999999); // Generate a random OTP
+
+    //     $twilioSid = 'AC5364f3cf7e2ff0a6469949b3d818d03e';
+    //     $twilioToken = '5d47bb69edd40198758886074db3dd42';
+    //     $twilioNumber = '+13613488478';
+
+    //     $client = new Client($twilioSid, $twilioToken);
+
+    //     $message = $client->messages->create(
+    //         $request->input('mobile_number'),
+    //         [
+    //             'from' => $twilioNumber,
+    //             'body' => 'Your OTP: ' . $otp,
+    //         ]
+    //     );
+
+    //     return response()->json(['message' => 'OTP sent successfully']);
+    // }
+
 
     public function login(Request $request)
     {
         $data = [];
 
-        $validator = Validator::make($request->all(), [
-            'otp' => 'required|numeric|min:6',
-        ]);
+        $userOtp = FamilyOtp::where("otp", $request->otp)->first(); 
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        if($request->device_token == "" || $request->device_token == null){
+        if(!$userOtp){
             $data['status'] = "Error";
-            $data['message'] = 'Invalid Login Token';
+            $data['message'] = 'Invalid Otp';
             $status = 400;
             return response()->json($data, $status);exit;
         }
+        $now = now();
+        if($userOtp && $now->isBefore(($userOtp->expire_at))){ 
 
-        $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
-
-        if (!$familyMember) {
-            $head = Family::where('head_mobile_number', $request->mobile)->first();
-
-            if (!$head) {
+            if($request->device_token == "" || $request->device_token == null){
                 $data['status'] = "Error";
-                $data['message'] = 'Please Enter Valid Mobile Number';
+                $data['message'] = 'Invalid Login Token';
                 $status = 400;
-                return response()->json($data, $status);
-            } else {
-                $head->device_token = $request->device_token;
-                $head->save();
-                $data['status'] = "Success";
-                $data['role'] = "family_head";
-                $data['data'] = $head;
+                return response()->json($data, $status);exit;
             }
-        } else {
-            $familyMember->device_token = $request->device_token;
-            $familyMember->save();
-            $data['status'] = "Success";
-            $data['role'] = "family_member";
-            $data['data'] = $familyMember;
-        }
 
-        return response()->json($data, 200);
+            $familyMember = FamilyMember::where('mobile_number', $request->mobile)->first();
+
+            if (!$familyMember) {
+                $head = Family::where('head_mobile_number', $request->mobile)->first();
+
+                if (!$head) {
+                    $data['status'] = "Error";
+                    $data['message'] = 'Please Enter Valid Mobile Number';
+                    $status = 400;
+                    return response()->json($data, $status);
+                } else {
+                    $head->device_token = $request->device_token;
+                    $head->save();
+                    $data['status'] = "Success";
+                    $data['role'] = "family_head";
+                    $data['data'] = $head;
+                }
+            } else {
+                $familyMember->device_token = $request->device_token;
+                $familyMember->save();
+                $data['status'] = "Success";
+                $data['role'] = "family_member";
+                $data['data'] = $familyMember;
+            }
+
+            return response()->json($data, 200);
+        }else{
+            $data['status'] = "Error";
+            $data['message'] = 'Otp is Expired Please Generate New';
+            $status = 400;
+            return response()->json($data, $status);exit;
+        }
     }
 
+    
     public function update(Request $request, $id)
     {
         try {
@@ -509,6 +578,12 @@ class FamilyController extends Controller
             'requests.updated_at',
             'requests.deleted_at',
             ]);
+
+            foreach ($requests as $request) {
+                if ($request->column_name === 'Business Image') {
+                    $request->new_value = Storage::disk('s3')->temporaryUrl($request->new_value, now()->addMinutes(10));
+                }
+            }  
              
             $data['status'] = "Success";
             $data['data'] = $requests;
@@ -603,104 +678,116 @@ class FamilyController extends Controller
             return response()->json($data, 200);
         }
 
-    public function searchLastName(Request $request)
-    {
-        $query = $request->input('query');
-
-        $families = Family::where('head_last_name', 'LIKE', "%$query%")
-            ->get(['head_last_name']);
-
-        return response()->json($families, 200);
-    }
-
-    public function familyDirectory(Request $request)
-    {
-        $firstName = $request->input('first_name');
-        $middleName = $request->input('middle_name');
-        $lastName = $request->input('last_name');
-    	//$gender = $request->input('gender');
-    	$marital = $request->input('marital');
-    	$relationship = $request->input('relation');
-    	$qualification = $request->input('qualification');
-    	$degree = $request->input('degree');
-    	$occupation = $request->input('occupation');
-        $membersQuery = DB::table('family_members')
-            ->whereNull('family_members.deleted_at')
-            ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
-            ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
-            ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
-            ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
-    	    //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
-    	    ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
-    	    ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
-    	    ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
-    	    ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
-    	    ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
-            ->select(
-                'family_members.id',
-                'family_members.first_name',
-                'family_members.middle_name',
-                'family_members.last_name',
-                'family_members.dob',
-                'family_members.mobile_number',
-                'family_members.relationship_with_head',
-                'fa.head_first_name',
-                'fa.head_middle_name',
-                'fa.head_last_name',
-                'fa.head_mobile_number'
-            );
-            
+        public function searchLastName(Request $request)
+        {
+            $query = $request->input('query');
     
-        $members = $membersQuery->get();
-
-        $totalGroup = count($members);
-        $perPage = 15;
-        $page = Paginator::resolveCurrentPage('page');
+            $families = Family::where('head_last_name', 'LIKE', '%'.$query.'%')
+            ->distinct()
+                ->get(['head_last_name']);
     
-        $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
-            'pageName' => 'page',
-        ]);
+            return response()->json($families, 200);
+        }
 
-        $u1 = json_encode($members,true);
-        $u2 = json_decode($u1,true);
-
-        $current_page = $u2['current_page'];
-        $first_page_url = $u2['first_page_url'];
-        $from = $u2['from'];
-        $last_page = $u2['last_page'];
-        $last_page_url = $u2['last_page_url'];
-        $links = $u2['links'];
-        $next_page_url = $u2['next_page_url'];
-        $path = $u2['path'];
-        $per_page = $u2['per_page'];
-        $prev_page_url = $u2['prev_page_url'];
-        $to = $u2['to'];
-        $total = $u2['total'];
-
-        $u3 = json_encode($u2['data'],true);
-        $u4 = json_decode($u3,true);
-       
+        public function familyDirectory(Request $request)
+        {
+            $firstName = $request->input('first_name');
+            $middleName = $request->input('middle_name');
+            $lastName = $request->input('last_name');
+            //$gender = $request->input('gender');
+            $marital = $request->input('marital');
+            $relationship = $request->input('relation');
+            $qualification = $request->input('qualification');
+            $degree = $request->input('degree');
+            $occupation = $request->input('occupation');
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+            $membersQuery = DB::table('family_members')
+                ->whereNull('family_members.deleted_at')
+                ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
+                ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
+                //->orWhere('family_members.first_name', 'LIKE', 'null')
+                ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
+                //->orWhere('family_members.middle_name', 'LIKE', 'null')
+                ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
+                //->orWhere('family_members.last_name', 'LIKE', 'null')
+                //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
+                ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
+                ->orWhere('family_members.marital_status', 'LIKE', 'null')
+            ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
+                //->orWhere('family_members.relationship_with_head', 'LIKE', 'null')
+                ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
+                //->orWhere('family_members.qualification', 'LIKE', 'null')
+                ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
+                //->orWhere('family_members.degree', 'LIKE', 'null')
+                ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
+                //->orWhere('family_members.occupation', 'LIKE', 'null')
+            ->whereBetween('family_members.dob',[$start_date,$end_date])
+                ->select(
+                    'family_members.id',
+                    'family_members.first_name',
+                    'family_members.middle_name',
+                    'family_members.last_name',
+                    'family_members.dob',
+                    'family_members.mobile_number',
+                    'family_members.relationship_with_head',
+                    'fa.head_first_name',
+                    'fa.head_middle_name',
+                    'fa.head_last_name',
+                    'fa.head_mobile_number'
+                );
+                
         
-        $data['current_page'] = $current_page;
-        $data['data'] = $u4;
-        $data['first_page_url'] = $first_page_url;
-        $data['from'] = $from;
-        $data['last_page'] = $last_page;
-        $data['last_page_url'] = $last_page_url;
-        $data['links'] = $links;
-        $data['next_page_url'] = $next_page_url;
-        $data['path'] = $path;
-        $data['per_page'] = $per_page;
-        $data['prev_page_url'] = $prev_page_url;
-        $data['to'] = $to;
-        $data['total'] = $total;
-       
-        $mdata['status'] = "Success"; 
-        $mdata['data'] = $data; 
-
-        return response()->json($mdata, 200);
-    }
+            $members = $membersQuery->get();
+    
+            $totalGroup = count($members);
+            $perPage = 2000;
+            $page = Paginator::resolveCurrentPage('page');
+        
+            $members = new LengthAwarePaginator($members->forPage($page, $perPage), $totalGroup, $perPage, $page, [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]);
+    
+            $u1 = json_encode($members,true);
+            $u2 = json_decode($u1,true);
+    
+            $current_page = $u2['current_page'];
+            $first_page_url = $u2['first_page_url'];
+            $from = $u2['from'];
+            $last_page = $u2['last_page'];
+            $last_page_url = $u2['last_page_url'];
+            $links = $u2['links'];
+            $next_page_url = $u2['next_page_url'];
+            $path = $u2['path'];
+            $per_page = $u2['per_page'];
+            $prev_page_url = $u2['prev_page_url'];
+            $to = $u2['to'];
+            $total = $u2['total'];
+    
+            $u3 = json_encode($u2['data'],true);
+            $u4 = json_decode($u3,true);
+           
+            
+            $data['current_page'] = $current_page;
+            $data['data'] = $u4;
+            $data['first_page_url'] = $first_page_url;
+            $data['from'] = $from;
+            $data['last_page'] = $last_page;
+            $data['last_page_url'] = $last_page_url;
+            $data['links'] = $links;
+            $data['next_page_url'] = $next_page_url;
+            $data['path'] = $path;
+            $data['per_page'] = $per_page;
+            $data['prev_page_url'] = $prev_page_url;
+            $data['to'] = $to;
+            $data['total'] = $total;
+           
+            $mdata['status'] = "Success"; 
+            $mdata['data'] = $data; 
+    
+            return response()->json($mdata, 200);
+        }
 
 }
  

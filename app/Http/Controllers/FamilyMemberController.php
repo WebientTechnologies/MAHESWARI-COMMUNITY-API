@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Storage;
 class FamilyMemberController extends Controller
 {
     public function update(Request $request, $id, $role)
-    {
+    {	$filename = '';
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $filename = time().'.'.$image->getClientOriginalExtension();
@@ -50,7 +50,7 @@ class FamilyMemberController extends Controller
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for First Name',
+                    'title' => $member->first_name.' requested to change for First Name',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -71,7 +71,7 @@ class FamilyMemberController extends Controller
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Middle Name',
+                    'title' => $member->first_name.' requested to change for Middle Name',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -92,7 +92,7 @@ class FamilyMemberController extends Controller
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Last Name',
+                    'title' => $member->first_name.' requested to change for Last Name',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -113,7 +113,7 @@ class FamilyMemberController extends Controller
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Occupation',
+                    'title' => $member->first_name.' requested to change for Occupation',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -134,7 +134,7 @@ class FamilyMemberController extends Controller
                 $changeRequest->status= 'pending';
                 $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for dob',
+                    'title' => $member->first_name.' requested to change for dob',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -146,17 +146,17 @@ class FamilyMemberController extends Controller
                 $newValue = $request->mobile_number;
                 $oldValue = $member->mobile_number;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'mobile_number';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
+                $changeRequest->column_name = 'mobile_number';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
                 $changeRequest->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Mobile Number',
+                    'title' => $member->first_name.' requested to change for Mobile Number',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -168,17 +168,17 @@ class FamilyMemberController extends Controller
                 $newValue = $request->relationship_with_head;
                 $oldValue = $member->relationship_with_head;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'relationship_with_head';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
-                $request->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->column_name = 'relationship_with_head';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Relation',
+                    'title' => $member->first_name.' requested to change for Relation',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -190,17 +190,17 @@ class FamilyMemberController extends Controller
                 $newValue = $request->address;
                 $oldValue = $member->address;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'address';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
-                $request->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->column_name = 'address';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Address',
+                    'title' => $member->first_name.' requested to change for Address',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -212,17 +212,17 @@ class FamilyMemberController extends Controller
                 $newValue = $request->qualification;
                 $oldValue = $member->qualification;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'qualification';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
-                $request->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->column_name = 'qualification';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Qualification',
+                    'title' => $member->first_name.' requested to change for Qualification',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -233,17 +233,17 @@ class FamilyMemberController extends Controller
                 $newValue = $request->marital_status;
                 $oldValue = $member->marital_status;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'marital_status';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
-                $request->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->column_name = 'marital_status';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Marital Status',
+                    'title' => $member->first_name.' requested to change for Marital Status',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -251,21 +251,44 @@ class FamilyMemberController extends Controller
                 ]);
             }
 
+            if($request->has('date_of_anniversary')){
+                $newValue = $request->date_of_anniversary;
+                $oldValue = $member->date_of_anniversary;
+                
+                $changeRequest = new ChangeRequest;
+
+                $changeRequest->column_name = 'date_of_anniversary';
+                $changeRequest->old_value = $oldValue == null ? '' : $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
+                $changeRequest->head_id = $member->family_id;
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
+                $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
+                    'title' => $member->first_name.' requested to change for Degree',
+                    'body' => $newValue,
+                    'type' => 'request',
+                    'image_url' => "erfheifuoe",
+                    'mobile_number' => $head->head_mobile_number,
+                ]);
+            }
+
+
             if($request->has('degree')){
                 $newValue = $request->degree;
                 $oldValue = $member->degree;
                 
-                $request = new ChangeRequest;
+                $changeRequest = new ChangeRequest;
 
-                $request->column_name = 'degree';
-                $request->old_value = $oldValue;
-                $request->new_value = $newValue;
-                $request->member_id = $id;
+                $changeRequest->column_name = 'degree';
+                $changeRequest->old_value = $oldValue;
+                $changeRequest->new_value = $newValue;
+                $changeRequest->member_id = $id;
                 $changeRequest->head_id = $member->family_id;
-                $request->status= 'pending';
-                $request->save();
+                $changeRequest->status= 'pending';
+                $changeRequest->save();
                 $response = Http::post('https://nkybahfpvbf3tlxe5tdzwxnns40tfghu.lambda-url.ap-south-1.on.aws/send-notification', [
-                    'title' => 'change for Degree',
+                    'title' => $member->first_name.' requested to change for Degree',
                     'body' => $newValue,
                     'type' => 'request',
                     'image_url' => "erfheifuoe",
@@ -297,8 +320,6 @@ class FamilyMemberController extends Controller
 
             return response()->json(['message' => 'Record Updated successfully']);
         }
-        
-    
     }
 
     public function birthday($id,$role){

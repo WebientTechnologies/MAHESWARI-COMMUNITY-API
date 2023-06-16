@@ -48,6 +48,7 @@ class BusinessController extends Controller
                 'subcat.name AS subcategory_name',
                 'businesses.subcategory_id',
                 'businesses.address',
+		'businesses.is_image_approved',
                 'businesses.file',
                 'businesses.contact_number',
                 'businesses.created_at',
@@ -71,7 +72,7 @@ class BusinessController extends Controller
             });
     
             $totalGroup = count($mergedBusiness);
-            $perPage = 15;
+            $perPage = 100;
             $page = Paginator::resolveCurrentPage('page');
         
             $mergedBusiness = new LengthAwarePaginator($mergedBusiness->forPage($page, $perPage), $totalGroup, $perPage, $page, [
@@ -124,101 +125,103 @@ class BusinessController extends Controller
         }
     }
 
-public function getBusinessForFamily(Request $request){
+    public function getBusinessForFamily(Request $request){
 
-    $data =[];
-    $logedInUserId = $request->id;
-    $role = $request->role;
-
-    if($role == 'family_head'){
-        $familyMemberIds = DB::table('family_members')
-        ->where('family_id', $logedInUserId)
-        ->pluck('id')
-        ->all();
-
-        $businesses = DB::table('businesses')
-        ->whereIn('businesses.owner_id', $familyMemberIds)
-        ->orWhere('businesses.owner_id', $logedInUserId)
-        ->where('businesses.deleted_at', null)
-        ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
-        ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
-        ->orderBy('id', 'DESC')
-        ->get([
-            'businesses.id',
-            'businesses.business_name',
-            'businesses.owner_name',
-            'businesses.owner_id',
-            'cat.id AS category_id',
-            'cat.name AS category_name',
-            'subcat.id AS subcategory_id',
-            'subcat.name AS subcategory_name',
-            'businesses.subcategory_id',
-            'businesses.address',
-            'businesses.file',
-            'businesses.contact_number',
-            'businesses.created_at',
-            'businesses.updated_at',
-            'businesses.deleted_at',
-        ]);
-
-        $media = [];
-        foreach ($businesses as $business) {
-            $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($business->file, now()->addMinutes(10));
-            $media[] = ["file" => $temporarySignedUrl];
+        $data =[];
+        $logedInUserId = $request->id;
+        $role = $request->role;
+    
+        if($role == 'family_head'){
+            $familyMemberIds = DB::table('family_members')
+            ->where('family_id', $logedInUserId)
+            ->pluck('id')
+            ->all();
+    
+            $businesses = DB::table('businesses')
+            ->whereIn('businesses.owner_id', $familyMemberIds)
+            ->orWhere('businesses.owner_id', $logedInUserId)
+            ->where('businesses.deleted_at', null)
+            ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+            ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
+            ->orderBy('id', 'DESC')
+            ->get([
+                'businesses.id',
+                'businesses.business_name',
+                'businesses.owner_name',
+                'businesses.owner_id',
+                'cat.id AS category_id',
+                'cat.name AS category_name',
+                'subcat.id AS subcategory_id',
+                'subcat.name AS subcategory_name',
+                'businesses.subcategory_id',
+                'businesses.address',
+                'businesses.file',
+            'businesses.is_image_approved',
+                'businesses.contact_number',
+                'businesses.created_at',
+                'businesses.updated_at',
+                'businesses.deleted_at',
+            ]);
+    
+            $media = [];
+            foreach ($businesses as $business) {
+                $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($business->file, now()->addMinutes(10));
+                $media[] = ["file" => $temporarySignedUrl];
+            }
+    
+            $mergedBusiness = collect($businesses)->map(function ($item, $key) use ($media) {
+                $item->media = $media[$key];
+                return $item;
+            });
+    
         }
-
-        $mergedBusiness = collect($businesses)->map(function ($item, $key) use ($media) {
-            $item->media = $media[$key];
-            return $item;
-        });
-
-    }
-    if($role == 'family_member'){
-        $head = FamilyMember::where('id',$logedInUserId)->first('family_id');
-        $head_id = $head->family_id;
-        $businesses = DB::table('businesses')
-        ->Where('businesses.owner_id', $logedInUserId)
-        ->orWhere('businesses.owner_id', $head_id)
-        ->where('businesses.deleted_at', null)
-        ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
-        ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
-        ->orderBy('id', 'DESC')
-        ->get([
-            'businesses.id',
-            'businesses.business_name',
-            'businesses.owner_name',
-            'businesses.owner_id',
-            'cat.id AS category_id',
-            'cat.name AS category_name',
-            'subcat.id AS subcategory_id',
-            'subcat.name AS subcategory_name',
-            'businesses.subcategory_id',
-            'businesses.address',
-            'businesses.file',
-            'businesses.contact_number',
-            'businesses.created_at',
-            'businesses.updated_at',
-            'businesses.deleted_at',
-        ]);
-
-        $media = [];
-        foreach ($businesses as $business) {
-            $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($business->file, now()->addMinutes(10));
-            $media[] = ["file" => $temporarySignedUrl];
+        if($role == 'family_member'){
+            $head = FamilyMember::where('id',$logedInUserId)->first('family_id');
+            $head_id = $head->family_id;
+            $businesses = DB::table('businesses')
+            ->Where('businesses.owner_id', $logedInUserId)
+            ->orWhere('businesses.owner_id', $head_id)
+            ->where('businesses.deleted_at', null)
+            ->leftJoin('categories as cat', 'businesses.category_id', '=', 'cat.id')
+            ->leftJoin('subcategories as subcat', 'businesses.subcategory_id', '=', 'subcat.id')
+            ->orderBy('id', 'DESC')
+            ->get([
+                'businesses.id',
+                'businesses.business_name',
+                'businesses.owner_name',
+                'businesses.owner_id',
+                'cat.id AS category_id',
+                'cat.name AS category_name',
+                'subcat.id AS subcategory_id',
+                'subcat.name AS subcategory_name',
+                'businesses.subcategory_id',
+                'businesses.address',
+                'businesses.file',
+            'businesses.is_image_approved',
+                'businesses.contact_number',
+                'businesses.created_at',
+                'businesses.updated_at',
+                'businesses.deleted_at',
+            ]);
+    
+            $media = [];
+            foreach ($businesses as $business) {
+                $temporarySignedUrl = Storage::disk('s3')->temporaryUrl($business->file, now()->addMinutes(10));
+                $media[] = ["file" => $temporarySignedUrl];
+            }
+    
+            $mergedBusiness = collect($businesses)->map(function ($item, $key) use ($media) {
+                $item->media = $media[$key];
+                return $item;
+            });
+    
         }
-
-        $mergedBusiness = collect($businesses)->map(function ($item, $key) use ($media) {
-            $item->media = $media[$key];
-            return $item;
-        });
-
+        $data['status'] = "Success";
+        $data['data'] = $mergedBusiness;
+        $status = 200;
+    
+        return response()->json($data, $status);
     }
-    $data['status'] = "Success";
-    $data['data'] = $mergedBusiness;
-    $status = 200;
-
-    return response()->json($data, $status);
-}
 
     public function show($id)
     {
@@ -324,9 +327,9 @@ public function getBusinessForFamily(Request $request){
             $business->owner_id = $params['owner_id'];
             $business->file = $name;
             $business->category_id = $params['category_id'];
-            $business->subcategory_id = $request->subcategory_id; 
-            $business->address = $request->address;
-            $business->contact_number = $request->contact_number;
+            $business->subcategory_id = $params['subcategory_id']; 
+            $business->address = $params['address'];
+            $business->contact_number = $params['contact_number'];
             $business->is_image_approved = $imageApproved;
             $business->save();
             

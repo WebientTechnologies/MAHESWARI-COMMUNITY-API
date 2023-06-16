@@ -17,6 +17,9 @@ class Kernel extends ConsoleKernel
         // ...
         \App\Console\Commands\DeleteExpiredNews::class,
         \App\Console\Commands\SendBirthdayWishes::class,
+        \App\Console\Commands\SendBirthdayNotifications::class,
+        \App\Console\Commands\SendAnniversaryNotifications::class,
+        \App\Console\Commands\SendAnniversaryWishes::class,
     ];
 
     
@@ -24,6 +27,9 @@ class Kernel extends ConsoleKernel
     {
         
         $schedule->command('send:birthday-wishes')->daily();
+        $schedule->command('send:birthday-notification')->daily();
+        $schedule->command('send:anniversary-notification')->daily();
+        $schedule->command('send:anniversary-wishes')->daily();
         $schedule->command('news:delete-expired')->daily();
 
     }
