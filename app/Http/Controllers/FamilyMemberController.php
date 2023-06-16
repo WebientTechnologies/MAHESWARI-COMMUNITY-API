@@ -322,108 +322,122 @@ class FamilyMemberController extends Controller
         }
     }
 
-    public function birthday($id,$role){
-        $birthdayDetails = [];
-        $data = [];
+    public function birthdayAndAnniversary($id, $role)
+    {
         $today = Carbon::today();
-        if($role == 'family_head'){
-            $members =  DB::table('family_members')
-                                ->where('family_members.family_id', $id)
-                                ->whereMonth('family_members.dob', $today->month)
-                                ->whereDay('family_members.dob', $today->day)
-                                ->get();
-            
+        $celebrations = [];
 
-            // Add family members' details to the response
+        if ($role == 'family_head') {
+            $members =  DB::table('family_members')
+                ->where('family_members.family_id', $id)
+                ->whereMonth('family_members.dob', $today->month)
+                ->whereDay('family_members.dob', $today->day)
+                ->get();
+
+            $families = FamilyMember::where('family_id', $id)
+                ->whereMonth('date_of_anniversary', $today->month)
+                ->whereDay('date_of_anniversary', $today->day)
+                ->get();
+
             foreach ($members as $member) {
-                $birthdayDetails[] = [
-                    'id' =>$member->id,
+                $celebrations[] = [
+                    'id' => $member->id,
                     'first_name' => $member->first_name,
                     'middle_name' => $member->middle_name,
                     'last_name' => $member->last_name,
-                    'dob' => $member->dob,
+                    'type' => 'Birthday',
                 ];
             }
-            // print_r($data);exit;
-            
+
+            foreach ($families as $family) {
+                $celebrations[] = [
+                    'id' => $family->id,
+                    'first_name' => $family->head_first_name,
+                    'middle_name' => $family->head_middle_name,
+                    'last_name' => $family->head_last_name,
+                    'type' => 'Anniversary',
+                ];
+            }
         }
 
-        if($role == 'family_member'){
-
-            $head = FamilyMember::where('id',$id)->first('family_id');
+        if ($role == 'family_member') {
+            
+            $head = FamilyMember::where('id', $id)->first('family_id');
             $head_id = $head->family_id;
-            $members = FamilyMember::where('family_id', $head_id )
+
+            $membersdob = FamilyMember::where('family_id', $head_id)
+                ->where('id', '!=', $id)
+                ->whereMonth('dob', $today->month)
+                ->whereDay('dob', $today->day)
+                ->get();
+
+            $membersanv = FamilyMember::where('family_id', $head_id)
             ->where('id', '!=', $id)
-            ->whereMonth('dob', $today->month)
-            ->whereDay('dob', $today->day)
+            ->whereMonth('date_of_anniversary', $today->month)
+            ->whereDay('date_of_anniversary', $today->day)
             ->get();
 
-            $family = Family::where('id', $head_id)
+            $familyanv = Family::where('id', $head_id)
+                ->whereMonth('date_of_anniversary', $today->month)
+                ->whereDay('date_of_anniversary', $today->day)
+                ->first();
+
+            $familydob = Family::where('id', $head_id)
             ->whereMonth('head_dob', $today->month)
             ->whereDay('head_dob', $today->day)
             ->first();
 
-            
-
-            // Add family members' details to the response
-            foreach ($members as $member) {
-                $birthdayDetails[] = [
-                    'id' =>$member->id,
+            foreach ($membersdob as $member) {
+                $celebrations[] = [
+                    'id' => $member->id,
                     'first_name' => $member->first_name,
                     'middle_name' => $member->middle_name,
                     'last_name' => $member->last_name,
-                    'dob' => $member->dob,
+                    'type' => 'Birthday',
                 ];
             }
 
-            // Add family details to the response
-            if ($family) {
-                $birthdayDetails[] = [
-                    'id' =>$family->id,
-                    'first_name' => $family->head_first_name,
-                    'middle_name' => $family->head_middle_name,
-                    'last_name' => $family->head_last_name,
-                    'dob' => $family->head_dob,
+            foreach ($membersanv as $membera) {
+                $celebrations[] = [
+                    'id' => $membera->id,
+                    'first_name' => $membera->first_name,
+                    'middle_name' => $membera->middle_name,
+                    'last_name' => $membera->last_name,
+                    'type' => 'Birthday',
                 ];
-            }         
-            
+            }
+
+            if ($familyanv) {
+                $celebrations[] = [
+                    'id' => $familyanv->id,
+                    'first_name' => $familyanv->head_first_name,
+                    'middle_name' => $familyanv->head_middle_name,
+                    'last_name' => $familyanv->head_last_name,
+                    'type' => 'Anniversary',
+                ];
+            }
+
+            if ($familydob) {
+                $celebrations[] = [
+                    'id' => $familydob->id,
+                    'first_name' => $familydob->head_first_name,
+                    'middle_name' => $familydob->head_middle_name,
+                    'last_name' => $familydob->head_last_name,
+                    'type' => 'Birthday',
+                ];
+            }
         }
-        $data['status'] = 'success';
-        $data['message'] = 'Today is Birthday';
-        $data['data'] = $birthdayDetails;
-        $status =200;
+
+        $data = [
+            'status' => 'success',
+            'message' => 'Today is Birthday and Anniversary',
+            'data' => $celebrations,
+        ];
+
+        $status = 200;
         return response()->json($data, $status);
-    }
+}
 
-    public function destroy(Request $request, $id){
-
-        $data = [];
-        try{
-            
-            $member = FamilyMember::find($id);
-            if(empty($member)){
-
-                $data['status'] = "Error";
-                $data['message'] = "member not found.";
-                $status = 401;
-                return response()->json($data, $status);
-                exit;
-            }
-            $member->delete();
-
-            $data['status'] = "Success";
-            $data['message'] = "Record deleted.";
-            $status = 200;
-            
-            return response()->json($data, $status);
-            
-
-        } catch (Exception $e){
-            $data['status'] = "Error";
-            $data['message'] = $e->getMessage();
-            return response()->json($data, 500);
-        }
-    }
 
 
 }

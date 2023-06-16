@@ -78,7 +78,7 @@ Route::group([
     Route::post('/family-directory', [FamilyController::class, 'familyDirectory']);
 
     //Family Member Route//
-    Route::get('/birthday/{id}/{role}',[FamilyMemberController::class, 'birthday']);
+    Route::get('/birthday/{id}/{role}',[FamilyMemberController::class, 'birthdayAndAnniversary']);
     Route::post('/register-family-member', [FamilyMemberController::class, 'register']);
     Route::post('/family-member-login', [FamilyMemberController::class, 'login']);
     Route::put('/update-member/{id}/{role}',[FamilyMemberController::class, 'update']);
