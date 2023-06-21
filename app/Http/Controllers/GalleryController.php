@@ -16,7 +16,7 @@ class GalleryController extends Controller
     public function index()
     {
         $data = [];
-        try {
+	try{                
             $galleries = Gallery::where('deleted_at', null)
                 ->where('source', '=', 'media')
                 ->orderBy('id', 'DESC')
@@ -24,12 +24,11 @@ class GalleryController extends Controller
 
             $totalGroup = count($galleries);
             $perPage = 15;
-            $page = Paginator::resolveCurrentPage('page');
+	    $currentPage = LengthAwarePaginator::resolveCurrentPage();
+	    $collection = new Collection($galleries);
+            $page = $collection->slice(($currentPage - 1) * $perPage,$perPage)->values();
 
-            $galleries = new LengthAwarePaginator($galleries->forPage($page, $perPage), $totalGroup, $perPage, $page, [
-                'path' => Paginator::resolveCurrentPath(),
-                'pageName' => 'page',
-            ]);
+            $galleries = new LengthAwarePaginator($page, count($collection), $perPage);
 
             $galleries->getCollection()->transform(function ($gallery) {
                 $temporarySignedUrl = null;
@@ -48,22 +47,10 @@ class GalleryController extends Controller
                 ];
             });
 
-            $data['current_page'] = $galleries->currentPage();
-            $data['data'] = $galleries->getCollection();
-            $data['first_page_url'] = $galleries->url(1);
-            $data['from'] = $galleries->firstItem();
-            $data['last_page'] = $galleries->lastPage();
-            $data['last_page_url'] = $galleries->url($galleries->lastPage());
-            $data['links'] = $galleries->render();
-            $data['next_page_url'] = $galleries->nextPageUrl();
-            $data['path'] = $galleries->path();
-            $data['per_page'] = $galleries->perPage();
-            $data['prev_page_url'] = $galleries->previousPageUrl();
-            $data['to'] = $galleries->lastItem();
-            $data['total'] = $galleries->total();
+           
 
             $mdata['status'] = 'Success';
-            $mdata['data'] = $data;
+            $mdata['data'] = $galleries->setPath(request()->url());
 
             return response()->json($mdata, 200);
         } catch (Exception $e) {

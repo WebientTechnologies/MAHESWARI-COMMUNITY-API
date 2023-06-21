@@ -81,7 +81,7 @@ class FamilyController extends Controller
     {
        $data = [];
        $accountSid = 'ACa0604c7efd58bf7e6c478291ec9d7d32';
-        $authToken = '704013c1c96cfae863a9a2316cc67a37';
+        $authToken = 'e51d6dfc24b8244586f08ed767bac11c';
         $fromNumber = '+14064765761';
         $mobileNumber = $request->input('mobile_number');
         $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
