@@ -80,6 +80,9 @@ class FamilyController extends Controller
     public function sendOtp(Request $request)
     {
        $data = [];
+       $accountSid = 'ACa0604c7efd58bf7e6c478291ec9d7d32';
+        $authToken = 'e51d6dfc24b8244586f08ed767bac11c';
+        $fromNumber = '+14064765761';
         $mobileNumber = $request->input('mobile_number');
         $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
 
@@ -108,9 +111,19 @@ class FamilyController extends Controller
                     'otp' => rand(123456, 999999),
                     'expire_at' => $now->addMinutes(10),
                 ]);
-               $finalMobileNumber = '+91' . $mobileNumber;
-               $finalOtp->sendSms($finalMobileNumber);
                 // print_r($finalOtp->otp);exit;
+               $finalMobileNumber = '+91' . $mobileNumber;
+              // $finalOtp->sendSms($finalMobileNumber);
+                // print_r($finalOtp->otp);exit;
+
+                $twilio = new Client($accountSid, $authToken);
+                $twilio->messages->create(
+                    $finalMobileNumber,
+                    [
+                        'from' => $fromNumber,
+                        'body' => "Your OTP is: $finalOtp->otp",
+                    ]
+                );
 
                 $data['status'] = "Success";
                 $data['message'] = "Otp Sent";
@@ -134,9 +147,19 @@ class FamilyController extends Controller
                 ]);
             $headnumber = Family::where('id', $fId)->get(['head_mobile_number']);
             $number = $headnumber[0]['head_mobile_number'];
+            //print_r($finalOtp->otp);exit;
             $finalMobileNumber = '+91' . $number;
             // print_r($finalMobileNumber);exit;
-            $finalOtp->sendSms($finalMobileNumber);
+           // $finalOtp->sendSms($finalMobileNumber);
+
+           $twilio = new Client($accountSid, $authToken);
+                $twilio->messages->create(
+                    $finalMobileNumber,
+                    [
+                        'from' => $fromNumber,
+                        'body' => "Your OTP is: $finalOtp->otp",
+                    ]
+                );
 
             $data['status'] = "Success";
             $data['message'] = "Otp Sent";
@@ -454,7 +477,7 @@ class FamilyController extends Controller
                     return response()->json($data, $status);
                     exit;
                 }
-
+                $filename = '';
                 if ($request->hasFile('image')) {
                     $image = $request->file('image');
                     $filename = time().'.'.$image->getClientOriginalExtension();
