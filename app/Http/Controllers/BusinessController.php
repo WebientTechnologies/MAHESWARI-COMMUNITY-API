@@ -302,10 +302,12 @@ class BusinessController extends Controller
                     Storage::disk('s3')->put($name, file_get_contents($file));     
                 }
                 
+            }else{
+                $name =null;
             }
 
             $role = $request->role;
-            $imageApproved = 1;
+            $imageApproved = 0;
             if($role == 'family_member'){
                 $imageApproved = 0;
 
