@@ -81,7 +81,7 @@ class FamilyController extends Controller
     {
        $data = [];
        $accountSid = 'ACa0604c7efd58bf7e6c478291ec9d7d32';
-        $authToken = 'e51d6dfc24b8244586f08ed767bac11c';
+        $authToken = 'e427a15e231facb7c36f6a4807f8e8d0';
         $fromNumber = '+14064765761';
         $mobileNumber = $request->input('mobile_number');
         $familyMembers = FamilyMember::where('mobile_number', $mobileNumber)->get(['family_id']);
@@ -113,15 +113,13 @@ class FamilyController extends Controller
                 ]);
                 // print_r($finalOtp->otp);exit;
                $finalMobileNumber = '+91' . $mobileNumber;
-              // $finalOtp->sendSms($finalMobileNumber);
-                // print_r($finalOtp->otp);exit;
 
-                $twilio = new Client($accountSid, $authToken);
-                $twilio->messages->create(
+                $client = new Client($accountSid, $authToken);
+                $message = $client->messages->create(
                     $finalMobileNumber,
                     [
                         'from' => $fromNumber,
-                        'body' => "Your OTP is: $finalOtp->otp",
+                        'body' => 'Your OTP: ' . $finalOtp->otp,
                     ]
                 );
 
@@ -149,15 +147,13 @@ class FamilyController extends Controller
             $number = $headnumber[0]['head_mobile_number'];
             //print_r($finalOtp->otp);exit;
             $finalMobileNumber = '+91' . $number;
-            // print_r($finalMobileNumber);exit;
-           // $finalOtp->sendSms($finalMobileNumber);
-
-           $twilio = new Client($accountSid, $authToken);
-                $twilio->messages->create(
+            
+           $client = new Client($accountSid, $authToken);
+                $message = $client->messages->create(
                     $finalMobileNumber,
                     [
                         'from' => $fromNumber,
-                        'body' => "Your OTP is: $finalOtp->otp",
+                        'body' => 'Your OTP: ' . $finalOtp->otp,
                     ]
                 );
 
