@@ -306,6 +306,19 @@ class BusinessController extends Controller
                 $name =null;
             }
 
+            
+            // print_r($imageApproved);exit;
+            $business = new Business();
+            $business->business_name = $params['business_name'];
+            $business->owner_name = $params['owner_name'];
+            $business->owner_id = $params['owner_id'];
+            $business->file = $name;
+            $business->category_id = $params['category_id'];
+            $business->subcategory_id = $params['subcategory_id']; 
+            $business->address = $params['address'];
+            $business->contact_number = $params['contact_number'];
+            $business->is_image_approved = 0;
+           if( $business->save()){
             $role = $request->role;
             if($role == 'family_member'){
                 
@@ -318,6 +331,7 @@ class BusinessController extends Controller
                 $request->member_id = $params['owner_id'];
                 $request->head_id = $member->family_id;
                 $request->status= 'pending';
+                $request->business_id= $business->id;
                 $request->save();
             }
 
@@ -331,20 +345,10 @@ class BusinessController extends Controller
                 $request->member_id = null;
                 $request->head_id = $params['owner_id'];
                 $request->status= 'pending';
+                $request->business_id= $business->id;
                 $request->save();
             }
-            // print_r($imageApproved);exit;
-            $business = new Business();
-            $business->business_name = $params['business_name'];
-            $business->owner_name = $params['owner_name'];
-            $business->owner_id = $params['owner_id'];
-            $business->file = $name;
-            $business->category_id = $params['category_id'];
-            $business->subcategory_id = $params['subcategory_id']; 
-            $business->address = $params['address'];
-            $business->contact_number = $params['contact_number'];
-            $business->is_image_approved = 0;
-            $business->save();
+           }
             
 
             $data['status'] = "Success";
@@ -405,6 +409,7 @@ class BusinessController extends Controller
                         $request->member_id = $business->owner_id;
                         $request->head_id = $member->family_id;
                         $request->status= 'pending';
+                        $request->business_id= $params['id'];
                         $request->save();
                     }
 
@@ -418,6 +423,7 @@ class BusinessController extends Controller
                         $request->member_id = null;
                         $request->head_id = $business->owner_id;
                         $request->status= 'pending';
+                        $request->business_id= $params['id'];
                         $request->save();
                     }
                     $business->file = $name;
