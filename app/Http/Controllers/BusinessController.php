@@ -302,13 +302,13 @@ class BusinessController extends Controller
                     Storage::disk('s3')->put($name, file_get_contents($file));     
                 }
                 
+            }else{
+                $name =null;
             }
 
             $role = $request->role;
-            $imageApproved = 1;
             if($role == 'family_member'){
-                $imageApproved = 0;
-
+                
                 $member = FamilyMember::where('id', $params['owner_id'])->first();
                 $request = new ChangeRequest;
 
@@ -317,6 +317,19 @@ class BusinessController extends Controller
                 $request->new_value = $name;
                 $request->member_id = $params['owner_id'];
                 $request->head_id = $member->family_id;
+                $request->status= 'pending';
+                $request->save();
+            }
+
+            if($role == 'family_head'){
+
+                $request = new ChangeRequest;
+
+                $request->column_name = 'Business Image';
+                $request->old_value = 'blank Image';
+                $request->new_value = $name;
+                $request->member_id = null;
+                $request->head_id = $params['owner_id'];
                 $request->status= 'pending';
                 $request->save();
             }
@@ -330,7 +343,7 @@ class BusinessController extends Controller
             $business->subcategory_id = $params['subcategory_id']; 
             $business->address = $params['address'];
             $business->contact_number = $params['contact_number'];
-            $business->is_image_approved = $imageApproved;
+            $business->is_image_approved = 0;
             $business->save();
             
 
@@ -352,7 +365,7 @@ class BusinessController extends Controller
         $data = [];
         try{
             $params = $request->all();
-            if (empty($params['business_name']) || empty($params['owner_name']) || empty($params['category_id'] )){
+            if (empty($params['business_name']) ||  empty($params['category_id'] )){
                 $data['status'] = "Error";
                 $data['message'] = "Missing params.";
                 $status = 400;
@@ -380,16 +393,44 @@ class BusinessController extends Controller
                         $name = 'community-'.time().'.'.$extension;
                         Storage::disk('s3')->put($name, file_get_contents($file));     
                     }
+                    $role = $request->role;
+                    if($role == 'family_member'){
+                        
+                        $member = FamilyMember::where('id', $business->owner_id)->first();
+                        $request = new ChangeRequest;
+
+                        $request->column_name = 'Business Image';
+                        $request->old_value = $business->file;
+                        $request->new_value = $name;
+                        $request->member_id = $business->owner_id;
+                        $request->head_id = $member->family_id;
+                        $request->status= 'pending';
+                        $request->save();
+                    }
+
+                    if($role == 'family_head'){
+
+                        $request = new ChangeRequest;
+
+                        $request->column_name = 'Business Image';
+                        $request->old_value = $business->file;
+                        $request->new_value = $name;
+                        $request->member_id = null;
+                        $request->head_id = $business->owner_id;
+                        $request->status= 'pending';
+                        $request->save();
+                    }
                     $business->file = $name;
                 }
             
                 $business->business_name = $params['business_name'];
-                $business->owner_name = $params['owner_name'];
+                $business->owner_name = isset($request->owner_name)?$request->owner_name:$business->owner_name;
                 
                 $business->category_id = $params['category_id'];
-                $business->subcategory_id = $request->subcategory_id; 
-                $business->address = $request->address;
-                $business->contact_number = $request->contact_number;
+                $business->subcategory_id = $params['subcategory_id']; 
+                $business->address = $params['address'];
+                $business->contact_number = $params['contact_number'];
+
                 $business->save();
                 $data['status'] = "Success";
                 $data['message'] = "Record Updated.";
