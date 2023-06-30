@@ -710,43 +710,52 @@ class FamilyController extends Controller
 
         public function familyDirectory(Request $request)
         {
-            $firstName = $request->input('first_name');
-            $middleName = $request->input('middle_name');
-            $lastName = $request->input('last_name');
-            //$gender = $request->input('gender');
-            $marital = $request->input('marital');
-            $relationship = $request->input('relation');
-            $qualification = $request->input('qualification');
-            $degree = $request->input('degree');
-            $occupation = $request->input('occupation');
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
-            $membersQuery = DB::table('family_members')
-                ->whereNull('family_members.deleted_at')
-                ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id')
-                ->where('family_members.first_name', 'LIKE', '%'.$firstName.'%')
-                //->orWhere('family_members.first_name', 'LIKE', 'null')
-                ->where('family_members.middle_name', 'LIKE', '%'.$middleName.'%')
-                //->orWhere('family_members.middle_name', 'LIKE', 'null')
-                ->where('family_members.last_name', 'LIKE', '%'.$lastName.'%')
-                //->orWhere('family_members.last_name', 'LIKE', 'null')
-                //->where('family_members.gender', 'LIKE', '%'.$gender.'%')
-                ->where('family_members.marital_status', 'LIKE', '%'.$marital.'%')
-                ->orWhere('family_members.marital_status', 'LIKE', 'null')
-            ->where('family_members.relationship_with_head', 'LIKE', '%'.$relationship.'%')
-                //->orWhere('family_members.relationship_with_head', 'LIKE', 'null')
-                ->where('family_members.qualification', 'LIKE', '%'.$qualification.'%')
-                //->orWhere('family_members.qualification', 'LIKE', 'null')
-                ->where('family_members.degree', 'LIKE', '%'.$degree.'%')
-                //->orWhere('family_members.degree', 'LIKE', 'null')
-                ->where('family_members.occupation', 'LIKE', '%'.$occupation.'%')
-                //->orWhere('family_members.occupation', 'LIKE', 'null')
-            ->whereBetween('family_members.dob',[$start_date,$end_date])
-                ->select(
+            $query = DB::table('family_members')
+                    ->whereNull('family_members.deleted_at')
+                    ->leftJoin('families as fa', 'family_members.family_id', '=', 'fa.id');
+
+                if ($request->has('first_name')) {
+                    $query->where('family_members.first_name', 'LIKE', '%'.$request->input('first_name').'%');
+                }
+
+                if ($request->has('middle_name')) {
+                    $query->where('family_members.middle_name', 'LIKE', '%'.$request->input('middle_name').'%');
+                }
+
+                if ($request->has('last_name')) {
+                    $query->where('family_members.last_name', 'LIKE', '%'.$request->input('last_name').'%');
+                }
+
+                if ($request->has('marital')) {
+                    $query->where('family_members.marital_status', 'LIKE', '%'.$request->input('marital').'%');
+                }
+
+                if ($request->has('relation')) {
+                    $query->where('family_members.relationship_with_head', 'LIKE', '%'.$request->input('relation').'%');
+                }
+
+                if ($request->has('qualification')) {
+                    $query->where('family_members.qualification', 'LIKE', '%'.$request->input('qualification').'%');
+                }
+
+                if ($request->has('degree')) {
+                    $query->where('family_members.degree', 'LIKE', '%'.$request->input('degree').'%');
+                }
+
+                if ($request->has('occupation')) {
+                    $query->where('family_members.occupation', 'LIKE', '%'.$request->input('occupation').'%');
+                }
+
+                if ($request->has('start_date') && $request->has('end_date')) {
+                    $query->whereBetween('family_members.dob', [$request->input('start_date'), $request->input('end_date')]);
+                }
+
+                $members = $query->select(
                     'family_members.id',
                     'family_members.first_name',
                     'family_members.middle_name',
                     'family_members.last_name',
+                    'family_members.occupation',
                     'family_members.dob',
                     'family_members.mobile_number',
                     'family_members.relationship_with_head',
@@ -754,10 +763,10 @@ class FamilyController extends Controller
                     'fa.head_middle_name',
                     'fa.head_last_name',
                     'fa.head_mobile_number'
-                );
+                )->get();
                 
         
-            $members = $membersQuery->get();
+            // $members = $membersQuery->get();
     
             $totalGroup = count($members);
             $perPage = 2000;
