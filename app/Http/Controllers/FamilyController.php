@@ -746,6 +746,10 @@ class FamilyController extends Controller
                     $query->where('family_members.occupation', 'LIKE', '%'.$request->input('occupation').'%');
                 }
 
+                if ($request->has('sub_occupation')) {
+                    $query->where('family_members.sub_occupation', 'LIKE', '%'.$request->input('sub_occupation').'%');
+                }
+
                 if ($request->has('start_date') && $request->has('end_date')) {
                     $query->whereBetween('family_members.dob', [$request->input('start_date'), $request->input('end_date')]);
                 }
@@ -756,6 +760,7 @@ class FamilyController extends Controller
                     'family_members.middle_name',
                     'family_members.last_name',
                     'family_members.occupation',
+                    'family_members.sub_occupation',
                     'family_members.dob',
                     'family_members.mobile_number',
                     'family_members.relationship_with_head',
